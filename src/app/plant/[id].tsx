@@ -28,6 +28,10 @@ import {
   ExternalLink,
   Beaker,
   TrendingUp,
+  ChevronDown,
+  ChevronUp,
+  Zap,
+  Award,
 } from 'lucide-react-native';
 import { useColorScheme } from '@/lib/useColorScheme';
 import { getPlantById } from '@/lib/data/plant-database';
@@ -36,6 +40,11 @@ import { Fish } from '@/lib/types/fish';
 import { cn } from '@/lib/cn';
 import { useTankStore } from '@/lib/state/tank-store';
 import { usePlantImage, useFishImage } from '@/lib/hooks/useImageUrl';
+import {
+  getCompatibilityExplanation,
+  lightingDefinitions,
+  difficultyDefinitions,
+} from '@/lib/utils/plant-compatibility';
 
 // Info tooltips content
 const sectionInfo: Record<string, { title: string; content: string }> = {
@@ -44,8 +53,8 @@ const sectionInfo: Record<string, { title: string; content: string }> = {
     content: 'Water parameters are critical for plant health. Temperature, pH, and hardness must match your plant\'s requirements. Incorrect parameters can cause melting, stunted growth, or death. Always cycle your tank and test water regularly.',
   },
   lighting: {
-    title: 'Why Lighting Matters',
-    content: 'Light is essential for photosynthesis. Low light plants can survive with basic aquarium lighting, while high light plants need powerful LED or CO2 injection. Too much light without nutrients causes algae, too little causes plant death.',
+    title: 'Understanding PAR Lighting',
+    content: 'PAR (Photosynthetically Active Radiation) measures usable light for plants.\n\nLow Light: 15-30 PAR - Basic aquarium lights suffice.\n\nMedium Light: 30-50 PAR - Quality planted tank LED needed.\n\nHigh Light: 50-100+ PAR - Professional lighting required, usually with CO2.',
   },
   placement: {
     title: 'Why Placement Matters',
@@ -54,6 +63,10 @@ const sectionInfo: Record<string, { title: string; content: string }> = {
   fishCompatibility: {
     title: 'Why Fish Compatibility Matters',
     content: 'Some fish will eat, uproot, or damage plants. Herbivorous fish like goldfish and silver dollars destroy most plants. Cichlids dig and uproot. Choose fish that complement your planted tank goals.',
+  },
+  difficulty: {
+    title: 'Understanding Plant Difficulty',
+    content: 'Easy: Thrives with basic lighting, no CO2, minimal care.\n\nModerate: Needs decent light, benefits from CO2, stable conditions.\n\nDifficult: Requires high light, CO2 injection, and precise care routine.',
   },
 };
 
@@ -204,11 +217,15 @@ const FishCompatibilityItem = ({
   status,
   onPress,
   isDark,
+  expanded,
+  onToggleExpand,
 }: {
   fish: Fish;
   status: 'compatible' | 'incompatible';
   onPress: () => void;
   isDark: boolean;
+  expanded: boolean;
+  onToggleExpand: () => void;
 }) => {
   const statusConfig = {
     compatible: { color: '#10B981', icon: CheckCircle, label: 'Safe' },
@@ -216,44 +233,89 @@ const FishCompatibilityItem = ({
   }[status];
 
   const StatusIcon = statusConfig.icon;
+  const explanation = getCompatibilityExplanation(fish.id, status);
 
   return (
-    <Pressable
-      onPress={onPress}
+    <View
       className={cn(
-        'flex-row items-center p-3 rounded-xl mb-2',
+        'rounded-xl mb-2 overflow-hidden',
         isDark ? 'bg-slate-800' : 'bg-white'
       )}
     >
-      <FishImageDisplay fishId={fish.id} />
-      <View className="flex-1 ml-3">
-        <Text
+      <Pressable
+        onPress={onToggleExpand}
+        className="flex-row items-center p-3"
+      >
+        <FishImageDisplay fishId={fish.id} />
+        <View className="flex-1 ml-3">
+          <Text
+            className={cn(
+              'text-sm font-semibold',
+              isDark ? 'text-white' : 'text-slate-900'
+            )}
+          >
+            {fish.commonName}
+          </Text>
+          <Text
+            className={cn(
+              'text-xs',
+              isDark ? 'text-slate-400' : 'text-slate-500'
+            )}
+          >
+            {explanation.reason}
+          </Text>
+        </View>
+        <View className="flex-row items-center">
+          <StatusIcon size={16} color={statusConfig.color} />
+          <Text
+            className="text-xs font-medium ml-1 mr-2"
+            style={{ color: statusConfig.color }}
+          >
+            {statusConfig.label}
+          </Text>
+          {expanded ? (
+            <ChevronUp size={16} color={isDark ? '#94A3B8' : '#64748B'} />
+          ) : (
+            <ChevronDown size={16} color={isDark ? '#94A3B8' : '#64748B'} />
+          )}
+        </View>
+      </Pressable>
+
+      {expanded && (
+        <View
           className={cn(
-            'text-sm font-semibold',
-            isDark ? 'text-white' : 'text-slate-900'
+            'px-3 pb-3 pt-0 border-t',
+            isDark ? 'border-slate-700' : 'border-slate-100'
           )}
         >
-          {fish.commonName}
-        </Text>
-        <Text
-          className={cn(
-            'text-xs',
-            isDark ? 'text-slate-400' : 'text-slate-500'
-          )}
-        >
-          {fish.temperament}
-        </Text>
-      </View>
-      <View className="flex-row items-center">
-        <StatusIcon size={16} color={statusConfig.color} />
-        <Text
-          className="text-xs font-medium ml-1"
-          style={{ color: statusConfig.color }}
-        >
-          {statusConfig.label}
-        </Text>
-      </View>
-    </Pressable>
+          <Text
+            className={cn(
+              'text-xs leading-5 mt-2',
+              isDark ? 'text-slate-300' : 'text-slate-600'
+            )}
+          >
+            {explanation.details}
+          </Text>
+          <Pressable
+            onPress={onPress}
+            className={cn(
+              'mt-3 py-2 rounded-lg flex-row items-center justify-center',
+              isDark ? 'bg-slate-700' : 'bg-slate-100'
+            )}
+          >
+            <Text
+              className={cn(
+                'text-xs font-medium',
+                isDark ? 'text-slate-300' : 'text-slate-600'
+              )}
+            >
+              View Fish Profile
+            </Text>
+            <ExternalLink size={12} color={isDark ? '#94A3B8' : '#64748B'} className="ml-1" />
+          </Pressable>
+        </View>
+      )}
+    </View>
   );
 };
 
@@ -263,11 +325,15 @@ const FishCompatibilityList = ({
   status,
   onPress,
   isDark,
+  expandedFishId,
+  onToggleExpand,
 }: {
   fishIds: string[];
   status: 'compatible' | 'incompatible';
   onPress: (id: string) => void;
   isDark: boolean;
+  expandedFishId: string | null;
+  onToggleExpand: (id: string) => void;
 }) => {
   const validFish = fishIds
     .map(id => getFishById(id))
@@ -283,6 +349,8 @@ const FishCompatibilityList = ({
           status={status}
           onPress={() => onPress(fish.id)}
           isDark={isDark}
+          expanded={expandedFishId === fish.id}
+          onToggleExpand={() => onToggleExpand(fish.id)}
         />
       ))}
     </>
@@ -301,6 +369,8 @@ export default function PlantProfileScreen() {
     visible: boolean;
     info: { title: string; content: string } | null;
   }>({ visible: false, info: null });
+
+  const [expandedFishId, setExpandedFishId] = useState<string | null>(null);
 
   const plant = getPlantById(id || '');
 
@@ -465,13 +535,46 @@ export default function PlantProfileScreen() {
 
           {/* Quick Stats */}
           <View className="flex-row mb-4">
-            <StatCard
-              icon={Sun}
-              title="Lighting"
-              value={`${plant.lighting.charAt(0).toUpperCase() + plant.lighting.slice(1)}`}
-              isDark={isDark}
-              iconColor={lightingColor}
-            />
+            <Pressable
+              className="flex-1 mr-3"
+              onPress={() => handleInfoPress('lighting')}
+            >
+              <View
+                className={cn(
+                  'p-4 rounded-xl',
+                  isDark ? 'bg-slate-800' : 'bg-white'
+                )}
+              >
+                <View className="flex-row items-center justify-between">
+                  <Sun size={20} color={lightingColor} />
+                  <Info size={14} color={isDark ? '#64748B' : '#94A3B8'} />
+                </View>
+                <Text
+                  className={cn(
+                    'text-xs mt-2 mb-1',
+                    isDark ? 'text-slate-400' : 'text-slate-500'
+                  )}
+                >
+                  Lighting
+                </Text>
+                <Text
+                  className={cn(
+                    'text-sm font-semibold',
+                    isDark ? 'text-white' : 'text-slate-900'
+                  )}
+                >
+                  {plant.lighting.charAt(0).toUpperCase() + plant.lighting.slice(1)}
+                </Text>
+                <Text
+                  className={cn(
+                    'text-xs mt-0.5',
+                    isDark ? 'text-slate-500' : 'text-slate-400'
+                  )}
+                >
+                  {lightingDefinitions[plant.lighting].parRange}
+                </Text>
+              </View>
+            </Pressable>
             <StatCard
               icon={Layers}
               title="Placement"
@@ -486,6 +589,58 @@ export default function PlantProfileScreen() {
               iconColor="#10B981"
             />
           </View>
+
+          {/* Difficulty Explanation Card */}
+          <Pressable
+            onPress={() => handleInfoPress('difficulty')}
+            className={cn(
+              'rounded-2xl p-4 mb-4',
+              isDark ? 'bg-slate-800' : 'bg-white'
+            )}
+          >
+            <View className="flex-row items-center justify-between mb-2">
+              <View className="flex-row items-center">
+                <Award size={18} color={difficultyColor} />
+                <Text
+                  className={cn(
+                    'text-sm font-semibold ml-2',
+                    isDark ? 'text-white' : 'text-slate-900'
+                  )}
+                >
+                  {plant.difficulty.charAt(0).toUpperCase() + plant.difficulty.slice(1)} Difficulty
+                </Text>
+              </View>
+              <Info size={14} color={isDark ? '#64748B' : '#94A3B8'} />
+            </View>
+            <Text
+              className={cn(
+                'text-xs leading-5',
+                isDark ? 'text-slate-400' : 'text-slate-500'
+              )}
+            >
+              {difficultyDefinitions[plant.difficulty].suitableFor}
+            </Text>
+            <View className="flex-row flex-wrap mt-2">
+              {difficultyDefinitions[plant.difficulty].requirements.slice(0, 3).map((req, index) => (
+                <View
+                  key={index}
+                  className={cn(
+                    'px-2 py-1 rounded-full mr-1 mb-1',
+                    isDark ? 'bg-slate-700' : 'bg-slate-100'
+                  )}
+                >
+                  <Text
+                    className={cn(
+                      'text-xs',
+                      isDark ? 'text-slate-300' : 'text-slate-600'
+                    )}
+                  >
+                    {req}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </Pressable>
 
           {/* Price & Find Store */}
           <View
@@ -725,6 +880,8 @@ export default function PlantProfileScreen() {
                   status="incompatible"
                   onPress={(fishId) => router.push(`/fish/${fishId}`)}
                   isDark={isDark}
+                  expandedFishId={expandedFishId}
+                  onToggleExpand={(fishId) => setExpandedFishId(expandedFishId === fishId ? null : fishId)}
                 />
               </>
             )}
@@ -744,6 +901,8 @@ export default function PlantProfileScreen() {
                   status="compatible"
                   onPress={(fishId) => router.push(`/fish/${fishId}`)}
                   isDark={isDark}
+                  expandedFishId={expandedFishId}
+                  onToggleExpand={(fishId) => setExpandedFishId(expandedFishId === fishId ? null : fishId)}
                 />
               </>
             )}

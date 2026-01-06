@@ -1,9 +1,9 @@
-import React from 'react';
-import { View, Text, ScrollView, Pressable, Image } from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import { View, Text, ScrollView, Pressable, Image, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { Fish as FishIcon, Droplets, Sparkles, ChevronRight, Waves, Leaf, Search } from 'lucide-react-native';
+import { Fish as FishIcon, Droplets, Sparkles, ChevronRight, Waves, Leaf, Search, Lightbulb, ThermometerSnowflake, FlaskConical, Heart, Zap } from 'lucide-react-native';
 import { useColorScheme } from '@/lib/useColorScheme';
 import { fishDatabase, getBeginnerFriendlyFish, getFreshwaterFish, getSaltwaterFish } from '@/lib/data/fish-database';
 import { plantDatabase, getEasyPlants } from '@/lib/data/plant-database';
@@ -11,6 +11,46 @@ import { Fish } from '@/lib/types/fish';
 import { cn } from '@/lib/cn';
 import type { Plant } from '@/lib/data/plant-database';
 import { useFishImage, usePlantImage } from '@/lib/hooks/useImageUrl';
+
+// Tips data for the rotating carousel
+const aquariumTips = [
+  {
+    icon: Droplets,
+    iconColor: '#0EA5E9',
+    title: 'Water Changes Matter',
+    content: 'Regular 25% weekly water changes help remove toxins and keep your fish healthy. Use a gravel vacuum to clean the substrate while changing water.',
+  },
+  {
+    icon: ThermometerSnowflake,
+    iconColor: '#8B5CF6',
+    title: 'Temperature Stability',
+    content: 'Fish are sensitive to temperature swings. Keep your heater consistent and avoid placing tanks near windows or AC vents.',
+  },
+  {
+    icon: FlaskConical,
+    iconColor: '#10B981',
+    title: 'Cycle Your Tank First',
+    content: 'New tanks need 4-6 weeks to establish beneficial bacteria. Add fish gradually and test water parameters regularly during cycling.',
+  },
+  {
+    icon: Leaf,
+    iconColor: '#22C55E',
+    title: 'Plants Improve Water Quality',
+    content: 'Live plants absorb nitrates, provide oxygen, and give fish natural hiding spots. Start with easy plants like Java Fern or Anubias!',
+  },
+  {
+    icon: Heart,
+    iconColor: '#EF4444',
+    title: 'Don\'t Overfeed',
+    content: 'Feed only what fish can eat in 2-3 minutes. Uneaten food decays and pollutes water. Most fish only need feeding once or twice daily.',
+  },
+  {
+    icon: Zap,
+    iconColor: '#F59E0B',
+    title: 'Lighting Schedule',
+    content: 'Keep lights on 8-10 hours daily for planted tanks. Use a timer for consistency. Too much light causes algae, too little harms plants.',
+  },
+];
 
 const FishCard = ({ fish, onPress }: { fish: Fish; onPress: () => void }) => {
   const colorScheme = useColorScheme();
@@ -200,6 +240,124 @@ const SectionHeader = ({
   </View>
 );
 
+// Tips Carousel Component with auto-rotation
+const TipsCarousel = ({ isDark }: { isDark: boolean }) => {
+  const [currentTipIndex, setCurrentTipIndex] = useState(0);
+  const scrollRef = useRef<ScrollView>(null);
+  const screenWidth = Dimensions.get('window').width - 40; // Account for padding
+
+  // Auto-rotate every 5 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTipIndex((prev) => {
+        const nextIndex = (prev + 1) % aquariumTips.length;
+        scrollRef.current?.scrollTo({
+          x: nextIndex * screenWidth,
+          animated: true,
+        });
+        return nextIndex;
+      });
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [screenWidth]);
+
+  const handleScroll = (event: { nativeEvent: { contentOffset: { x: number } } }) => {
+    const offsetX = event.nativeEvent.contentOffset.x;
+    const index = Math.round(offsetX / screenWidth);
+    if (index !== currentTipIndex && index >= 0 && index < aquariumTips.length) {
+      setCurrentTipIndex(index);
+    }
+  };
+
+  return (
+    <View className="px-5 mb-8">
+      <View className="flex-row items-center mb-3">
+        <Lightbulb size={18} color={isDark ? '#F59E0B' : '#D97706'} />
+        <Text
+          className={cn(
+            'text-lg font-bold ml-2',
+            isDark ? 'text-white' : 'text-slate-900'
+          )}
+        >
+          Quick Tips
+        </Text>
+      </View>
+
+      <ScrollView
+        ref={scrollRef}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+        style={{ flexGrow: 0 }}
+      >
+        {aquariumTips.map((tip, index) => {
+          const TipIcon = tip.icon;
+          return (
+            <View
+              key={index}
+              style={{ width: screenWidth }}
+              className={cn(
+                'rounded-2xl p-5',
+                isDark ? 'bg-slate-800' : 'bg-sky-50'
+              )}
+            >
+              <View className="flex-row items-center mb-3">
+                <TipIcon size={20} color={tip.iconColor} />
+                <Text
+                  className={cn(
+                    'text-base font-bold ml-2',
+                    isDark ? 'text-white' : 'text-slate-900'
+                  )}
+                >
+                  {tip.title}
+                </Text>
+              </View>
+              <Text
+                className={cn(
+                  'text-sm leading-5',
+                  isDark ? 'text-slate-300' : 'text-slate-600'
+                )}
+              >
+                {tip.content}
+              </Text>
+            </View>
+          );
+        })}
+      </ScrollView>
+
+      {/* Pagination dots */}
+      <View className="flex-row justify-center mt-3">
+        {aquariumTips.map((_, index) => (
+          <Pressable
+            key={index}
+            onPress={() => {
+              setCurrentTipIndex(index);
+              scrollRef.current?.scrollTo({
+                x: index * screenWidth,
+                animated: true,
+              });
+            }}
+          >
+            <View
+              className={cn(
+                'w-2 h-2 rounded-full mx-1',
+                index === currentTipIndex
+                  ? 'bg-sky-500'
+                  : isDark
+                  ? 'bg-slate-600'
+                  : 'bg-slate-300'
+              )}
+            />
+          </Pressable>
+        ))}
+      </View>
+    </View>
+  );
+};
+
 export default function HomeScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
@@ -365,40 +523,8 @@ export default function HomeScreen() {
             </ScrollView>
           </View>
 
-          {/* Tips Card */}
-          <View className="px-5 mb-8">
-            <View
-              className={cn(
-                'rounded-2xl p-5',
-                isDark ? 'bg-slate-800' : 'bg-sky-50'
-              )}
-            >
-              <View className="flex-row items-center mb-3">
-                <Droplets
-                  size={20}
-                  color={isDark ? '#38BDF8' : '#0284C7'}
-                />
-                <Text
-                  className={cn(
-                    'text-base font-bold ml-2',
-                    isDark ? 'text-white' : 'text-slate-900'
-                  )}
-                >
-                  Quick Tip
-                </Text>
-              </View>
-              <Text
-                className={cn(
-                  'text-sm leading-5',
-                  isDark ? 'text-slate-300' : 'text-slate-600'
-                )}
-              >
-                Adding live plants to your tank helps maintain water quality,
-                provides hiding spots for fish, and creates a natural ecosystem.
-                Start with easy plants like Java Fern or Anubias!
-              </Text>
-            </View>
-          </View>
+          {/* Tips Carousel */}
+          <TipsCarousel isDark={isDark} />
 
           <View className="h-4" />
         </ScrollView>

@@ -7,6 +7,10 @@ import {
   Image,
   TextInput,
   Modal,
+  Keyboard,
+  TouchableWithoutFeedback,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -24,10 +28,11 @@ import {
   PoundSterling,
   Star,
   Sparkles,
+  Layers,
 } from 'lucide-react-native';
 import { useColorScheme } from '@/lib/useColorScheme';
 import { fishDatabase, searchFish } from '@/lib/data/fish-database';
-import { plantDatabase, searchPlants, Plant } from '@/lib/data/plant-database';
+import { plantDatabase, searchPlants, Plant, PlantPlacement } from '@/lib/data/plant-database';
 import { Fish, WaterType, Temperament } from '@/lib/types/fish';
 import { checkTwoFishCompatibility } from '@/lib/utils/compatibility';
 import { CompatibilityStatus } from '@/lib/types/fish';
@@ -306,7 +311,17 @@ const CompatibilityModal = ({
   isDark: boolean;
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(true);
   const router = useRouter();
+
+  // Suggested fish for quick selection (popular community fish)
+  const suggestedFish = useMemo(() => {
+    if (!selectedFish) return [];
+    return fishDatabase
+      .filter((f) => f.id !== selectedFish.id)
+      .filter((f) => f.waterType === selectedFish.waterType)
+      .slice(0, 6);
+  }, [selectedFish]);
 
   const searchResults = useMemo(() => {
     if (!searchQuery.trim() || !selectedFish) return [];
@@ -326,157 +341,194 @@ const CompatibilityModal = ({
     incompatible: { color: '#EF4444', icon: AlertTriangle, label: 'Incompatible' },
   };
 
+  const renderFishItem = (fish: Fish) => {
+    const result = getCompatibilityWithFish(fish);
+    const config = result ? statusConfig[result.status] : null;
+    const StatusIcon = config?.icon || CheckCircle;
+
+    return (
+      <Pressable
+        key={fish.id}
+        onPress={() => {
+          onClose();
+          router.push(`/fish/${fish.id}`);
+        }}
+        className={cn(
+          'flex-row items-center p-3 rounded-xl mb-2',
+          isDark ? 'bg-slate-800' : 'bg-slate-50'
+        )}
+      >
+        <FishImage fish={fish} className="w-14 h-14 rounded-lg" />
+        <View className="flex-1 ml-3">
+          <Text
+            className={cn(
+              'text-sm font-semibold',
+              isDark ? 'text-white' : 'text-slate-900'
+            )}
+          >
+            {fish.commonName}
+          </Text>
+          <Text
+            className={cn(
+              'text-xs',
+              isDark ? 'text-slate-400' : 'text-slate-500'
+            )}
+          >
+            {fish.temperament} • {fish.waterType}
+          </Text>
+          {result && result.reasons.length > 0 && (
+            <Text
+              className="text-xs mt-1"
+              style={{ color: config?.color }}
+              numberOfLines={1}
+            >
+              {result.reasons[0]}
+            </Text>
+          )}
+        </View>
+        {config && (
+          <View className="items-center">
+            <StatusIcon size={24} color={config.color} />
+            <Text
+              className="text-xs font-medium mt-1"
+              style={{ color: config.color }}
+            >
+              {config.label}
+            </Text>
+          </View>
+        )}
+      </Pressable>
+    );
+  };
+
   if (!selectedFish) return null;
 
   return (
     <Modal visible={visible} transparent animationType="slide">
-      <View className="flex-1 justify-end">
-        <Pressable className="flex-1" onPress={onClose} />
-        <View
-          className={cn(
-            'rounded-t-3xl p-5',
-            isDark ? 'bg-slate-900' : 'bg-white'
-          )}
-          style={{ maxHeight: '80%' }}
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          className="flex-1"
         >
-          <View className="flex-row items-center justify-between mb-4">
-            <View className="flex-row items-center flex-1">
-              <FishImage fish={selectedFish} className="w-12 h-12 rounded-lg" />
-              <View className="ml-3 flex-1">
-                <Text
-                  className={cn(
-                    'text-lg font-bold',
-                    isDark ? 'text-white' : 'text-slate-900'
-                  )}
-                >
-                  Check Compatibility
-                </Text>
-                <Text
-                  className={cn(
-                    'text-sm',
-                    isDark ? 'text-slate-400' : 'text-slate-500'
-                  )}
-                >
-                  {selectedFish.commonName}
-                </Text>
+          <View className="flex-1 justify-end">
+            <Pressable className="flex-1" onPress={onClose} />
+            <View
+              className={cn(
+                'rounded-t-3xl p-5',
+                isDark ? 'bg-slate-900' : 'bg-white'
+              )}
+              style={{ maxHeight: '85%' }}
+            >
+              <View className="flex-row items-center justify-between mb-4">
+                <View className="flex-row items-center flex-1">
+                  <FishImage fish={selectedFish} className="w-12 h-12 rounded-lg" />
+                  <View className="ml-3 flex-1">
+                    <Text
+                      className={cn(
+                        'text-lg font-bold',
+                        isDark ? 'text-white' : 'text-slate-900'
+                      )}
+                    >
+                      Check Compatibility
+                    </Text>
+                    <Text
+                      className={cn(
+                        'text-sm',
+                        isDark ? 'text-slate-400' : 'text-slate-500'
+                      )}
+                    >
+                      {selectedFish.commonName}
+                    </Text>
+                  </View>
+                </View>
+                <Pressable onPress={onClose}>
+                  <X size={24} color={isDark ? '#94A3B8' : '#64748B'} />
+                </Pressable>
               </View>
-            </View>
-            <Pressable onPress={onClose}>
-              <X size={24} color={isDark ? '#94A3B8' : '#64748B'} />
-            </Pressable>
-          </View>
 
-          {/* Search */}
-          <View
-            className={cn(
-              'flex-row items-center px-4 py-3 rounded-xl mb-4',
-              isDark ? 'bg-slate-800' : 'bg-slate-100'
-            )}
-          >
-            <Search size={20} color={isDark ? '#94A3B8' : '#64748B'} />
-            <TextInput
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              placeholder="Search for another fish..."
-              placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
-              style={{
-                flex: 1,
-                marginLeft: 12,
-                fontSize: 16,
-                color: isDark ? '#FFFFFF' : '#0F172A',
-              }}
-            />
-            {searchQuery ? (
-              <Pressable onPress={() => setSearchQuery('')}>
-                <X size={18} color={isDark ? '#94A3B8' : '#64748B'} />
-              </Pressable>
-            ) : null}
-          </View>
+              {/* Search */}
+              <View
+                className={cn(
+                  'flex-row items-center px-4 py-3 rounded-xl mb-4',
+                  isDark ? 'bg-slate-800' : 'bg-slate-100'
+                )}
+              >
+                <Search size={20} color={isDark ? '#94A3B8' : '#64748B'} />
+                <TextInput
+                  value={searchQuery}
+                  onChangeText={(text) => {
+                    setSearchQuery(text);
+                    setShowSuggestions(!text.trim());
+                  }}
+                  placeholder="Search for another fish..."
+                  placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
+                  style={{
+                    flex: 1,
+                    marginLeft: 12,
+                    fontSize: 16,
+                    color: isDark ? '#FFFFFF' : '#0F172A',
+                  }}
+                  returnKeyType="search"
+                  onSubmitEditing={Keyboard.dismiss}
+                />
+                {searchQuery ? (
+                  <Pressable onPress={() => {
+                    setSearchQuery('');
+                    setShowSuggestions(true);
+                  }}>
+                    <X size={18} color={isDark ? '#94A3B8' : '#64748B'} />
+                  </Pressable>
+                ) : null}
+              </View>
 
-          {/* Results */}
-          <ScrollView showsVerticalScrollIndicator={false}>
-            {searchResults.length > 0 ? (
-              searchResults.map((fish) => {
-                const result = getCompatibilityWithFish(fish);
-                const config = result ? statusConfig[result.status] : null;
-                const StatusIcon = config?.icon || CheckCircle;
+              {/* Results */}
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+              >
+                {/* Suggested Fish Section */}
+                {showSuggestions && suggestedFish.length > 0 && (
+                  <>
+                    <Text
+                      className={cn(
+                        'text-sm font-semibold mb-3',
+                        isDark ? 'text-slate-300' : 'text-slate-600'
+                      )}
+                    >
+                      Tap a fish to check compatibility
+                    </Text>
+                    {suggestedFish.map(renderFishItem)}
+                  </>
+                )}
 
-                return (
-                  <Pressable
-                    key={fish.id}
-                    onPress={() => {
-                      onClose();
-                      router.push(`/fish/${fish.id}`);
-                    }}
+                {/* Search Results */}
+                {searchResults.length > 0 ? (
+                  <>
+                    <Text
+                      className={cn(
+                        'text-sm font-semibold mb-3',
+                        isDark ? 'text-slate-300' : 'text-slate-600'
+                      )}
+                    >
+                      Search Results
+                    </Text>
+                    {searchResults.map(renderFishItem)}
+                  </>
+                ) : searchQuery.trim() ? (
+                  <Text
                     className={cn(
-                      'flex-row items-center p-3 rounded-xl mb-2',
-                      isDark ? 'bg-slate-800' : 'bg-slate-50'
+                      'text-center py-8',
+                      isDark ? 'text-slate-400' : 'text-slate-500'
                     )}
                   >
-                    <FishImage fish={fish} className="w-14 h-14 rounded-lg" />
-                    <View className="flex-1 ml-3">
-                      <Text
-                        className={cn(
-                          'text-sm font-semibold',
-                          isDark ? 'text-white' : 'text-slate-900'
-                        )}
-                      >
-                        {fish.commonName}
-                      </Text>
-                      <Text
-                        className={cn(
-                          'text-xs',
-                          isDark ? 'text-slate-400' : 'text-slate-500'
-                        )}
-                      >
-                        {fish.temperament} • {fish.waterType}
-                      </Text>
-                      {result && result.reasons.length > 0 && (
-                        <Text
-                          className="text-xs mt-1"
-                          style={{ color: config?.color }}
-                          numberOfLines={1}
-                        >
-                          {result.reasons[0]}
-                        </Text>
-                      )}
-                    </View>
-                    {config && (
-                      <View className="items-center">
-                        <StatusIcon size={24} color={config.color} />
-                        <Text
-                          className="text-xs font-medium mt-1"
-                          style={{ color: config.color }}
-                        >
-                          {config.label}
-                        </Text>
-                      </View>
-                    )}
-                  </Pressable>
-                );
-              })
-            ) : searchQuery.trim() ? (
-              <Text
-                className={cn(
-                  'text-center py-8',
-                  isDark ? 'text-slate-400' : 'text-slate-500'
-                )}
-              >
-                No fish found
-              </Text>
-            ) : (
-              <Text
-                className={cn(
-                  'text-center py-8',
-                  isDark ? 'text-slate-400' : 'text-slate-500'
-                )}
-              >
-                Search for fish to check compatibility with {selectedFish.commonName}
-              </Text>
-            )}
-          </ScrollView>
-        </View>
-      </View>
+                    No fish found
+                  </Text>
+                ) : null}
+              </ScrollView>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </TouchableWithoutFeedback>
     </Modal>
   );
 };
@@ -495,6 +547,7 @@ export default function SearchScreen() {
   const [selectedCareLevel, setSelectedCareLevel] = useState<'beginner' | 'intermediate' | 'advanced' | null>(null);
   const [selectedPlantDifficulty, setSelectedPlantDifficulty] = useState<'easy' | 'moderate' | 'difficult' | null>(null);
   const [selectedPlantLighting, setSelectedPlantLighting] = useState<'low' | 'medium' | 'high' | null>(null);
+  const [selectedPlantPlacement, setSelectedPlantPlacement] = useState<PlantPlacement | null>(null);
 
   // Compatibility modal state
   const [compatibilityModalVisible, setCompatibilityModalVisible] = useState(false);
@@ -534,9 +587,12 @@ export default function SearchScreen() {
     if (selectedPlantLighting) {
       results = results.filter((p) => p.lighting === selectedPlantLighting);
     }
+    if (selectedPlantPlacement) {
+      results = results.filter((p) => p.placement === selectedPlantPlacement);
+    }
 
     return results;
-  }, [searchQuery, selectedPlantDifficulty, selectedPlantLighting]);
+  }, [searchQuery, selectedPlantDifficulty, selectedPlantLighting, selectedPlantPlacement]);
 
   const clearFilters = () => {
     setSelectedWaterType(null);
@@ -544,11 +600,12 @@ export default function SearchScreen() {
     setSelectedCareLevel(null);
     setSelectedPlantDifficulty(null);
     setSelectedPlantLighting(null);
+    setSelectedPlantPlacement(null);
   };
 
   const hasActiveFilters =
     selectedWaterType || selectedTemperament || selectedCareLevel ||
-    selectedPlantDifficulty || selectedPlantLighting;
+    selectedPlantDifficulty || selectedPlantLighting || selectedPlantPlacement;
 
   const handleCheckCompatibility = (fish: Fish) => {
     setSelectedFishForCompatibility(fish);
@@ -633,6 +690,8 @@ export default function SearchScreen() {
                 fontSize: 16,
                 color: 'white',
               }}
+              returnKeyType="search"
+              onSubmitEditing={Keyboard.dismiss}
             />
             {searchQuery ? (
               <Pressable onPress={() => setSearchQuery('')}>
@@ -643,7 +702,12 @@ export default function SearchScreen() {
         </LinearGradient>
 
         {/* Content */}
-        <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+        <ScrollView
+          className="flex-1"
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+        >
           {/* Filter Toggle */}
           <View className="px-5 pt-4">
             <Pressable
@@ -726,10 +790,20 @@ export default function SearchScreen() {
                   <Text className={cn('text-sm font-semibold mb-2', isDark ? 'text-slate-300' : 'text-slate-600')}>
                     Lighting
                   </Text>
-                  <View className="flex-row flex-wrap">
+                  <View className="flex-row flex-wrap mb-3">
                     <FilterChip label="Low" isActive={selectedPlantLighting === 'low'} onPress={() => setSelectedPlantLighting(selectedPlantLighting === 'low' ? null : 'low')} isDark={isDark} />
                     <FilterChip label="Medium" isActive={selectedPlantLighting === 'medium'} onPress={() => setSelectedPlantLighting(selectedPlantLighting === 'medium' ? null : 'medium')} isDark={isDark} />
                     <FilterChip label="High" isActive={selectedPlantLighting === 'high'} onPress={() => setSelectedPlantLighting(selectedPlantLighting === 'high' ? null : 'high')} isDark={isDark} />
+                  </View>
+
+                  <Text className={cn('text-sm font-semibold mb-2', isDark ? 'text-slate-300' : 'text-slate-600')}>
+                    Placement
+                  </Text>
+                  <View className="flex-row flex-wrap">
+                    <FilterChip label="Foreground" isActive={selectedPlantPlacement === 'foreground'} onPress={() => setSelectedPlantPlacement(selectedPlantPlacement === 'foreground' ? null : 'foreground')} isDark={isDark} />
+                    <FilterChip label="Midground" isActive={selectedPlantPlacement === 'midground'} onPress={() => setSelectedPlantPlacement(selectedPlantPlacement === 'midground' ? null : 'midground')} isDark={isDark} />
+                    <FilterChip label="Background" isActive={selectedPlantPlacement === 'background'} onPress={() => setSelectedPlantPlacement(selectedPlantPlacement === 'background' ? null : 'background')} isDark={isDark} />
+                    <FilterChip label="Floating" isActive={selectedPlantPlacement === 'floating'} onPress={() => setSelectedPlantPlacement(selectedPlantPlacement === 'floating' ? null : 'floating')} isDark={isDark} />
                   </View>
                 </>
               )}

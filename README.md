@@ -8,7 +8,8 @@ A cross-platform mobile app that helps aquarium hobbyists determine fish and pla
 - Welcome dashboard with featured fish and plant sections
 - Quick access to Search and My Tank
 - Easy plants, beginner-friendly fish, freshwater, and saltwater categories
-- Daily tips for aquarium care with plant recommendations
+- **Rotating tips carousel** with 6 aquarium care tips (auto-rotates every 5 seconds)
+- Swipe or tap dots to navigate between tips
 
 ### Search Tab (Combined Fish & Plant Browser)
 - Toggle between Fish and Plants modes
@@ -16,10 +17,12 @@ A cross-platform mobile app that helps aquarium hobbyists determine fish and pla
 - Filter by water type (freshwater/saltwater)
 - Filter by temperament (peaceful/semi-aggressive/aggressive)
 - Filter by care level (beginner/intermediate/advanced)
-- Browse aquarium plants with difficulty and lighting filters
+- Browse aquarium plants with difficulty, lighting, and **placement filters** (foreground/midground/background/floating)
 - Tap sparkle icon on any fish to check compatibility with other fish
+- **Scrollable fish selection** - tap fish directly without typing to check compatibility
 - AI-generated unique images for each species
 - Prices displayed in GBP (£)
+- **Keyboard handling** - keyboard dismisses on scroll or when tapping outside
 
 ### Fish Profiles
 Each fish has a dedicated profile page with:
@@ -38,13 +41,22 @@ Each fish has a dedicated profile page with:
 ### Plant Profiles
 Each plant has a dedicated profile page with:
 - Common name and scientific name
-- Difficulty level (easy/moderate/difficult)
-- Lighting requirements (low/medium/high)
+- Difficulty level with **detailed explanations** (easy/moderate/difficult)
+  - Shows what each difficulty level means
+  - Lists requirements for each difficulty
+  - Shows who each level is suitable for
+- Lighting requirements with **PAR values**:
+  - Low: 15-30 PAR
+  - Medium: 30-50 PAR
+  - High: 50-100+ PAR
 - CO2 requirements
 - Growth rate and placement
 - Water parameters (temperature, pH, hardness)
 - Care notes
-- Fish compatibility (safe fish vs fish to avoid)
+- **Detailed fish compatibility explanations**:
+  - Tap any fish to expand and see WHY it's compatible or incompatible
+  - Explains behaviors like digging, eating plants, or being plant-safe
+  - Navigate to fish profile with one tap
 - Price range in GBP (£)
 - Find stores near me feature
 
