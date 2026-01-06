@@ -36,6 +36,7 @@ import {
   checkMultipleFishCompatibility,
 } from '@/lib/utils/compatibility';
 import { cn } from '@/lib/cn';
+import { useFishImage, usePlantImage } from '@/lib/hooks/useImageUrl';
 
 type SearchMode = 'fish' | 'plants';
 type ViewMode = 'browse' | 'compatibility';
@@ -73,6 +74,30 @@ const FilterChip = ({
   </Pressable>
 );
 
+// Fish image component that uses generated images
+const FishImage = ({ fish, className }: { fish: Fish; className?: string }) => {
+  const imageUrl = useFishImage(fish.id, fish.imageUrl);
+  return (
+    <Image
+      source={{ uri: imageUrl }}
+      className={className || 'w-20 h-20 rounded-xl'}
+      resizeMode="cover"
+    />
+  );
+};
+
+// Plant image component that uses generated images
+const PlantImage = ({ plant, className }: { plant: Plant; className?: string }) => {
+  const imageUrl = usePlantImage(plant.id, plant.imageUrl);
+  return (
+    <Image
+      source={{ uri: imageUrl }}
+      className={className || 'w-20 h-20 rounded-xl'}
+      resizeMode="cover"
+    />
+  );
+};
+
 const FishListItem = ({
   fish,
   onPress,
@@ -103,11 +128,7 @@ const FishListItem = ({
         elevation: 2,
       }}
     >
-      <Image
-        source={{ uri: fish.imageUrl }}
-        className="w-20 h-20 rounded-xl"
-        resizeMode="cover"
-      />
+      <FishImage fish={fish} />
       <View className="flex-1 ml-4 justify-center">
         <Text
           className={cn(
@@ -198,11 +219,7 @@ const PlantListItem = ({
         elevation: 2,
       }}
     >
-      <Image
-        source={{ uri: plant.imageUrl }}
-        className="w-20 h-20 rounded-xl"
-        resizeMode="cover"
-      />
+      <PlantImage plant={plant} />
       <View className="flex-1 ml-4 justify-center">
         <Text
           className={cn(
@@ -278,11 +295,7 @@ const SelectedFishChip = ({
       isDark ? 'bg-slate-700' : 'bg-sky-100'
     )}
   >
-    <Image
-      source={{ uri: fish.imageUrl }}
-      className="w-6 h-6 rounded-full"
-      resizeMode="cover"
-    />
+    <FishImage fish={fish} className="w-6 h-6 rounded-full" />
     <Text
       className={cn(
         'text-sm font-medium mx-2',
@@ -339,19 +352,11 @@ const CompatibilityResultCard = ({
     >
       <View className="flex-row items-center p-4">
         <View className="flex-row items-center flex-1">
-          <Image
-            source={{ uri: result.fish1.imageUrl }}
-            className="w-10 h-10 rounded-lg"
-            resizeMode="cover"
-          />
+          <FishImage fish={result.fish1} className="w-10 h-10 rounded-lg" />
           <View className="mx-2">
             <StatusIcon size={20} color={statusConfig.color} />
           </View>
-          <Image
-            source={{ uri: result.fish2.imageUrl }}
-            className="w-10 h-10 rounded-lg"
-            resizeMode="cover"
-          />
+          <FishImage fish={result.fish2} className="w-10 h-10 rounded-lg" />
           <View className="ml-3 flex-1">
             <Text
               className={cn(
@@ -830,7 +835,7 @@ export default function SearchScreen() {
                       onPress={() => handleAddFish(fish)}
                       className={cn('flex-row items-center p-3 border-b', isDark ? 'border-slate-700' : 'border-slate-100')}
                     >
-                      <Image source={{ uri: fish.imageUrl }} className="w-10 h-10 rounded-lg" resizeMode="cover" />
+                      <FishImage fish={fish} className="w-10 h-10 rounded-lg" />
                       <View className="flex-1 ml-3">
                         <Text className={cn('text-sm font-medium', isDark ? 'text-white' : 'text-slate-900')}>
                           {fish.commonName}

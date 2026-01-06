@@ -37,6 +37,20 @@ import { getFishById, fishDatabase } from '@/lib/data/fish-database';
 import { Fish } from '@/lib/types/fish';
 import { cn } from '@/lib/cn';
 import { useTankStore } from '@/lib/state/tank-store';
+import { useFishImage } from '@/lib/hooks/useImageUrl';
+
+// Fish image component that uses generated images
+const FishImageDisplay = ({ fish, className, style }: { fish: Fish; className?: string; style?: object }) => {
+  const imageUrl = useFishImage(fish.id, fish.imageUrl);
+  return (
+    <Image
+      source={{ uri: imageUrl }}
+      className={className || 'w-12 h-12 rounded-lg'}
+      style={style}
+      resizeMode="cover"
+    />
+  );
+};
 
 // Info tooltips content
 const sectionInfo: Record<string, { title: string; content: string }> = {
@@ -218,11 +232,7 @@ const CompatibilityItem = ({
         isDark ? 'bg-slate-800' : 'bg-white'
       )}
     >
-      <Image
-        source={{ uri: fish.imageUrl }}
-        className="w-12 h-12 rounded-lg"
-        resizeMode="cover"
-      />
+      <FishImageDisplay fish={fish} className="w-12 h-12 rounded-lg" />
       <View className="flex-1 ml-3">
         <Text
           className={cn(
@@ -334,11 +344,7 @@ export default function FishProfileScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Hero Image */}
         <View className="relative">
-          <Image
-            source={{ uri: fish.imageUrl }}
-            className="w-full h-64"
-            resizeMode="cover"
-          />
+          <FishImageDisplay fish={fish} className="w-full h-64" />
           <LinearGradient
             colors={['rgba(0,0,0,0.5)', 'transparent', 'transparent', isDark ? '#0F172A' : '#F8FAFC']}
             style={{
