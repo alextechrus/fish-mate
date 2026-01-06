@@ -205,6 +205,7 @@ export default function HomeScreen() {
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={{ paddingHorizontal: 20 }}
+              style={{ flexGrow: 0 }}
             >
               {beginnerFish.map((fish) => (
                 <FishCard
@@ -227,6 +228,7 @@ export default function HomeScreen() {
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={{ paddingHorizontal: 20 }}
+              style={{ flexGrow: 0 }}
             >
               {freshwaterFish.map((fish) => (
                 <FishCard
@@ -249,6 +251,7 @@ export default function HomeScreen() {
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={{ paddingHorizontal: 20 }}
+              style={{ flexGrow: 0 }}
             >
               {saltwaterFish.map((fish) => (
                 <FishCard

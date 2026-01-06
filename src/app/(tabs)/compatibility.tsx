@@ -604,7 +604,7 @@ export default function CompatibilityScreen() {
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                style={{ marginHorizontal: -20 }}
+                style={{ marginHorizontal: -20, flexGrow: 0 }}
                 contentContainerStyle={{ paddingHorizontal: 20 }}
               >
                 {suggestedFish.map((fish) => (
