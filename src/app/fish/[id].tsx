@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   ScrollView,
   Pressable,
   Image,
+  Modal,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
@@ -23,12 +25,132 @@ import {
   Utensils,
   Home,
   Plus,
+  Info,
+  X,
+  DollarSign,
+  MapPin,
+  ExternalLink,
+  Beaker,
 } from 'lucide-react-native';
 import { useColorScheme } from '@/lib/useColorScheme';
 import { getFishById, fishDatabase } from '@/lib/data/fish-database';
 import { Fish } from '@/lib/types/fish';
 import { cn } from '@/lib/cn';
 import { useTankStore } from '@/lib/state/tank-store';
+
+// Info tooltips content
+const sectionInfo: Record<string, { title: string; content: string }> = {
+  waterParameters: {
+    title: 'Why Water Parameters Matter',
+    content: 'Water parameters are critical for fish health. Temperature, pH, and hardness must match your fish\'s natural habitat. Incorrect parameters can cause stress, disease, weakened immunity, and death. Always cycle your tank and test water regularly. Sudden changes in parameters can be fatal - make gradual adjustments only.',
+  },
+  dietFeeding: {
+    title: 'Why Diet & Feeding Matters',
+    content: 'Proper nutrition keeps fish healthy and vibrant. Overfeeding pollutes water and causes disease. Underfeeding leads to malnutrition and aggression. Feed small amounts 1-2 times daily - only what can be eaten in 2-3 minutes. Vary the diet with flakes, pellets, and frozen foods for optimal health.',
+  },
+  tankRequirements: {
+    title: 'Why Tank Requirements Matter',
+    content: 'Meeting tank requirements prevents stress and territorial aggression. Plants provide oxygen and hiding spots. Schooling fish need companions to feel secure - keeping them alone causes chronic stress. Hiding spaces reduce aggression and allow fish to establish territories. Always research before buying.',
+  },
+  compatibility: {
+    title: 'Why Compatibility Matters',
+    content: 'Incompatible fish leads to aggression, stress, injury, and death. Consider temperament, size, water parameters, and territory needs. Peaceful fish may be bullied or eaten by aggressive species. Always research compatibility before adding new fish to avoid costly and heartbreaking mistakes.',
+  },
+};
+
+const InfoModal = ({
+  visible,
+  onClose,
+  info,
+  isDark,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  info: { title: string; content: string } | null;
+  isDark: boolean;
+}) => {
+  if (!info) return null;
+
+  return (
+    <Modal visible={visible} transparent animationType="fade">
+      <Pressable
+        className="flex-1 justify-center items-center bg-black/50 px-6"
+        onPress={onClose}
+      >
+        <View
+          className={cn(
+            'rounded-2xl p-6 w-full max-w-sm',
+            isDark ? 'bg-slate-800' : 'bg-white'
+          )}
+        >
+          <View className="flex-row justify-between items-start mb-4">
+            <View className="flex-row items-center flex-1">
+              <Info size={20} color="#0EA5E9" />
+              <Text
+                className={cn(
+                  'text-lg font-bold ml-2 flex-1',
+                  isDark ? 'text-white' : 'text-slate-900'
+                )}
+              >
+                {info.title}
+              </Text>
+            </View>
+            <Pressable onPress={onClose}>
+              <X size={24} color={isDark ? '#94A3B8' : '#64748B'} />
+            </Pressable>
+          </View>
+          <Text
+            className={cn(
+              'text-sm leading-6',
+              isDark ? 'text-slate-300' : 'text-slate-600'
+            )}
+          >
+            {info.content}
+          </Text>
+        </View>
+      </Pressable>
+    </Modal>
+  );
+};
+
+const SectionHeader = ({
+  icon: Icon,
+  title,
+  infoKey,
+  onInfoPress,
+  isDark,
+  iconColor,
+}: {
+  icon: React.ElementType;
+  title: string;
+  infoKey?: string;
+  onInfoPress?: (key: string) => void;
+  isDark: boolean;
+  iconColor?: string;
+}) => (
+  <View className="flex-row items-center justify-between mb-4">
+    <View className="flex-row items-center">
+      <Icon size={20} color={iconColor || (isDark ? '#94A3B8' : '#64748B')} />
+      <Text
+        className={cn(
+          'text-lg font-bold ml-2',
+          isDark ? 'text-white' : 'text-slate-900'
+        )}
+      >
+        {title}
+      </Text>
+    </View>
+    {infoKey && onInfoPress && (
+      <Pressable
+        onPress={() => onInfoPress(infoKey)}
+        className="p-1"
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      >
+        <Info size={18} color="#0EA5E9" />
+      </Pressable>
+    )}
+  </View>
+);
 
 const InfoCard = ({
   icon: Icon,
@@ -138,6 +260,8 @@ export default function FishProfileScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
+  const [infoModal, setInfoModal] = useState<string | null>(null);
+
   const tanks = useTankStore((s) => s.tanks);
   const addFishToTank = useTankStore((s) => s.addFishToTank);
   const activeTankId = useTankStore((s) => s.activeTankId);
@@ -196,6 +320,13 @@ export default function FishProfileScreen() {
     }
   };
 
+  const handleFindStore = () => {
+    const query = encodeURIComponent(`aquarium fish store near me ${fish.commonName}`);
+    Linking.openURL(`https://www.google.com/search?q=${query}`);
+  };
+
+  const avgPrice = (fish.price.min + fish.price.max) / 2;
+
   return (
     <View className={cn('flex-1', isDark ? 'bg-slate-900' : 'bg-slate-50')}>
       <Stack.Screen options={{ headerShown: false }} />
@@ -248,7 +379,7 @@ export default function FishProfileScreen() {
           {/* Name Card */}
           <View
             className={cn(
-              'rounded-2xl p-5 mb-4',
+              'rounded-2xl p-5 mb-6',
               isDark ? 'bg-slate-800' : 'bg-white'
             )}
             style={{
@@ -333,7 +464,7 @@ export default function FishProfileScreen() {
           </View>
 
           {/* Description */}
-          <View className="mb-4">
+          <View className="mb-6">
             <Text
               className={cn(
                 'text-base leading-6',
@@ -344,8 +475,76 @@ export default function FishProfileScreen() {
             </Text>
           </View>
 
+          {/* Pricing & Store */}
+          <View
+            className={cn(
+              'rounded-2xl p-4 mb-6',
+              isDark ? 'bg-slate-800' : 'bg-white'
+            )}
+          >
+            <SectionHeader
+              icon={DollarSign}
+              title="Pricing"
+              isDark={isDark}
+              iconColor="#10B981"
+            />
+
+            <View className="flex-row justify-between items-center mb-3">
+              <Text
+                className={cn(
+                  'text-sm',
+                  isDark ? 'text-slate-400' : 'text-slate-500'
+                )}
+              >
+                Price Range
+              </Text>
+              <Text
+                className={cn(
+                  'text-lg font-bold',
+                  isDark ? 'text-white' : 'text-slate-900'
+                )}
+              >
+                ${fish.price.min} - ${fish.price.max}
+              </Text>
+            </View>
+
+            <View className="flex-row justify-between items-center mb-4">
+              <Text
+                className={cn(
+                  'text-sm',
+                  isDark ? 'text-slate-400' : 'text-slate-500'
+                )}
+              >
+                Average Price
+              </Text>
+              <Text className="text-lg font-bold text-emerald-500">
+                ~${avgPrice.toFixed(0)}
+              </Text>
+            </View>
+
+            <Pressable
+              onPress={handleFindStore}
+              className="flex-row items-center justify-center py-3 rounded-xl bg-sky-500"
+            >
+              <MapPin size={18} color="white" />
+              <Text className="text-white font-semibold ml-2">
+                Find Stores Near Me
+              </Text>
+              <ExternalLink size={14} color="white" className="ml-1" />
+            </Pressable>
+
+            <Text
+              className={cn(
+                'text-xs text-center mt-2',
+                isDark ? 'text-slate-500' : 'text-slate-400'
+              )}
+            >
+              Prices updated weekly. Actual prices may vary by location.
+            </Text>
+          </View>
+
           {/* Quick Stats */}
-          <View className="flex-row mb-4">
+          <View className="flex-row mb-6">
             <InfoCard
               icon={Ruler}
               title="Max Size"
@@ -369,18 +568,18 @@ export default function FishProfileScreen() {
           {/* Water Parameters */}
           <View
             className={cn(
-              'rounded-2xl p-4 mb-4',
+              'rounded-2xl p-4 mb-6',
               isDark ? 'bg-slate-800' : 'bg-white'
             )}
           >
-            <Text
-              className={cn(
-                'text-lg font-bold mb-4',
-                isDark ? 'text-white' : 'text-slate-900'
-              )}
-            >
-              Water Parameters
-            </Text>
+            <SectionHeader
+              icon={Beaker}
+              title="Water Parameters"
+              infoKey="waterParameters"
+              onInfoPress={setInfoModal}
+              isDark={isDark}
+              iconColor="#3B82F6"
+            />
 
             <View className="flex-row mb-3">
               <View className="flex-1">
@@ -452,21 +651,18 @@ export default function FishProfileScreen() {
           {/* Diet & Feeding */}
           <View
             className={cn(
-              'rounded-2xl p-4 mb-4',
+              'rounded-2xl p-4 mb-6',
               isDark ? 'bg-slate-800' : 'bg-white'
             )}
           >
-            <View className="flex-row items-center mb-3">
-              <Utensils size={20} color={isDark ? '#94A3B8' : '#64748B'} />
-              <Text
-                className={cn(
-                  'text-lg font-bold ml-2',
-                  isDark ? 'text-white' : 'text-slate-900'
-                )}
-              >
-                Diet & Feeding
-              </Text>
-            </View>
+            <SectionHeader
+              icon={Utensils}
+              title="Diet & Feeding"
+              infoKey="dietFeeding"
+              onInfoPress={setInfoModal}
+              isDark={isDark}
+              iconColor="#F59E0B"
+            />
 
             <View
               className={cn(
@@ -497,18 +693,18 @@ export default function FishProfileScreen() {
           {/* Tank Requirements */}
           <View
             className={cn(
-              'rounded-2xl p-4 mb-4',
+              'rounded-2xl p-4 mb-6',
               isDark ? 'bg-slate-800' : 'bg-white'
             )}
           >
-            <Text
-              className={cn(
-                'text-lg font-bold mb-3',
-                isDark ? 'text-white' : 'text-slate-900'
-              )}
-            >
-              Tank Requirements
-            </Text>
+            <SectionHeader
+              icon={Home}
+              title="Tank Requirements"
+              infoKey="tankRequirements"
+              onInfoPress={setInfoModal}
+              isDark={isDark}
+              iconColor="#8B5CF6"
+            />
 
             <View className="flex-row flex-wrap">
               {fish.needsPlants && (
@@ -572,14 +768,26 @@ export default function FishProfileScreen() {
 
           {/* Compatibility Section */}
           <View className="mb-8">
-            <Text
-              className={cn(
-                'text-lg font-bold mb-4',
-                isDark ? 'text-white' : 'text-slate-900'
-              )}
-            >
-              Compatibility
-            </Text>
+            <View className="flex-row items-center justify-between mb-4">
+              <View className="flex-row items-center">
+                <FishIcon size={20} color={isDark ? '#94A3B8' : '#64748B'} />
+                <Text
+                  className={cn(
+                    'text-lg font-bold ml-2',
+                    isDark ? 'text-white' : 'text-slate-900'
+                  )}
+                >
+                  Compatibility
+                </Text>
+              </View>
+              <Pressable
+                onPress={() => setInfoModal('compatibility')}
+                className="p-1"
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Info size={18} color="#0EA5E9" />
+              </Pressable>
+            </View>
 
             {compatibleFish.length > 0 && (
               <View className="mb-4">
@@ -649,6 +857,13 @@ export default function FishProfileScreen() {
           </View>
         </View>
       </ScrollView>
+
+      <InfoModal
+        visible={!!infoModal}
+        onClose={() => setInfoModal(null)}
+        info={infoModal ? sectionInfo[infoModal] : null}
+        isDark={isDark}
+      />
     </View>
   );
 }

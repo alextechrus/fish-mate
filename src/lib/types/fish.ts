@@ -15,6 +15,12 @@ export interface WaterParameters {
   hardnessMax: number;
 }
 
+export interface PriceRange {
+  min: number;
+  max: number;
+  currency: string;
+}
+
 export interface Fish {
   id: string;
   commonName: string;
@@ -38,6 +44,7 @@ export interface Fish {
   compatibleWith: string[]; // fish IDs
   incompatibleWith: string[]; // fish IDs
   conditionalWith: string[]; // fish IDs
+  price: PriceRange;
 }
 
 export interface CompatibilityResult {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -15,20 +15,21 @@ import {
   Anchor,
   Plus,
   Trash2,
-  Settings,
   Fish as FishIcon,
   Droplets,
   AlertTriangle,
   CheckCircle,
   X,
-  Edit3,
   ChevronRight,
+  DollarSign,
+  Lightbulb,
+  ArrowRight,
 } from 'lucide-react-native';
 import { useColorScheme } from '@/lib/useColorScheme';
 import { useTankStore } from '@/lib/state/tank-store';
-import { getFishById } from '@/lib/data/fish-database';
-import { checkMultipleFishCompatibility } from '@/lib/utils/compatibility';
-import { WaterType, Fish, TankSetup } from '@/lib/types/fish';
+import { getFishById, fishDatabase } from '@/lib/data/fish-database';
+import { checkMultipleFishCompatibility, getSuggestedCompatibleFish } from '@/lib/utils/compatibility';
+import { WaterType, Fish, TankSetup, CompatibilityResult } from '@/lib/types/fish';
 import { cn } from '@/lib/cn';
 
 const CreateTankModal = ({
@@ -92,11 +93,16 @@ const CreateTankModal = ({
             value={name}
             onChangeText={setName}
             placeholder="My Aquarium"
-            placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
-            className={cn(
-              'px-4 py-3 rounded-xl text-base mb-4',
-              isDark ? 'bg-slate-700 text-white' : 'bg-slate-100 text-slate-900'
-            )}
+            placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
+            style={{
+              paddingHorizontal: 16,
+              paddingVertical: 12,
+              borderRadius: 12,
+              fontSize: 16,
+              marginBottom: 16,
+              backgroundColor: isDark ? '#334155' : '#F1F5F9',
+              color: isDark ? '#FFFFFF' : '#0F172A',
+            }}
           />
 
           {/* Tank Size */}
@@ -112,12 +118,17 @@ const CreateTankModal = ({
             value={size}
             onChangeText={setSize}
             placeholder="20"
-            placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
+            placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
             keyboardType="numeric"
-            className={cn(
-              'px-4 py-3 rounded-xl text-base mb-4',
-              isDark ? 'bg-slate-700 text-white' : 'bg-slate-100 text-slate-900'
-            )}
+            style={{
+              paddingHorizontal: 16,
+              paddingVertical: 12,
+              borderRadius: 12,
+              fontSize: 16,
+              marginBottom: 16,
+              backgroundColor: isDark ? '#334155' : '#F1F5F9',
+              color: isDark ? '#FFFFFF' : '#0F172A',
+            }}
           />
 
           {/* Water Type */}
@@ -361,6 +372,8 @@ const FishInTank = ({
     aggressive: '#EF4444',
   }[fish.temperament];
 
+  const avgPrice = (fish.price.min + fish.price.max) / 2;
+
   return (
     <Pressable
       onPress={onPress}
@@ -394,7 +407,15 @@ const FishInTank = ({
               isDark ? 'text-slate-400' : 'text-slate-500'
             )}
           >
-            {fish.temperament} • {fish.maxSize}" max
+            {fish.temperament}
+          </Text>
+          <Text
+            className={cn(
+              'text-xs ml-2',
+              isDark ? 'text-slate-400' : 'text-slate-500'
+            )}
+          >
+            ~${avgPrice.toFixed(0)}
           </Text>
         </View>
       </View>
@@ -406,6 +427,185 @@ const FishInTank = ({
         <Trash2 size={18} color="#EF4444" />
       </Pressable>
     </Pressable>
+  );
+};
+
+const CompatibilityFixSuggestion = ({
+  result,
+  onRemoveFish,
+  isDark,
+}: {
+  result: CompatibilityResult;
+  onRemoveFish: (fishId: string) => void;
+  isDark: boolean;
+}) => {
+  const statusColor = result.status === 'conditional' ? '#F59E0B' : '#EF4444';
+
+  return (
+    <View
+      className={cn(
+        'rounded-xl p-4 mb-3',
+        isDark ? 'bg-slate-800' : 'bg-white'
+      )}
+    >
+      <View className="flex-row items-center mb-2">
+        <Image
+          source={{ uri: result.fish1.imageUrl }}
+          className="w-8 h-8 rounded-full"
+          resizeMode="cover"
+        />
+        <AlertTriangle size={16} color={statusColor} className="mx-2" />
+        <Image
+          source={{ uri: result.fish2.imageUrl }}
+          className="w-8 h-8 rounded-full"
+          resizeMode="cover"
+        />
+        <Text
+          className={cn(
+            'text-sm font-semibold ml-2 flex-1',
+            isDark ? 'text-white' : 'text-slate-900'
+          )}
+          numberOfLines={1}
+        >
+          {result.fish1.commonName} + {result.fish2.commonName}
+        </Text>
+      </View>
+
+      {result.reasons.slice(0, 1).map((reason, i) => (
+        <Text
+          key={i}
+          className={cn(
+            'text-xs mb-2',
+            isDark ? 'text-slate-400' : 'text-slate-500'
+          )}
+        >
+          {reason}
+        </Text>
+      ))}
+
+      <View className="flex-row items-center mt-2">
+        <Lightbulb size={14} color="#10B981" />
+        <Text
+          className={cn(
+            'text-xs font-medium ml-1',
+            isDark ? 'text-slate-300' : 'text-slate-600'
+          )}
+        >
+          Fix suggestion:
+        </Text>
+      </View>
+
+      <View className="flex-row mt-2 gap-2">
+        <Pressable
+          onPress={() => onRemoveFish(result.fish1.id)}
+          className="flex-1 flex-row items-center justify-center py-2 px-3 rounded-lg bg-red-500/10"
+        >
+          <Trash2 size={14} color="#EF4444" />
+          <Text className="text-red-500 text-xs font-medium ml-1" numberOfLines={1}>
+            Remove {result.fish1.commonName}
+          </Text>
+        </Pressable>
+        <Pressable
+          onPress={() => onRemoveFish(result.fish2.id)}
+          className="flex-1 flex-row items-center justify-center py-2 px-3 rounded-lg bg-red-500/10"
+        >
+          <Trash2 size={14} color="#EF4444" />
+          <Text className="text-red-500 text-xs font-medium ml-1" numberOfLines={1}>
+            Remove {result.fish2.commonName}
+          </Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+};
+
+const TankBreakdown = ({
+  fish,
+  isDark,
+}: {
+  fish: Fish[];
+  isDark: boolean;
+}) => {
+  const totalMinCost = fish.reduce((sum, f) => sum + f.price.min, 0);
+  const totalMaxCost = fish.reduce((sum, f) => sum + f.price.max, 0);
+  const avgCost = (totalMinCost + totalMaxCost) / 2;
+
+  return (
+    <View
+      className={cn(
+        'rounded-xl p-4 mb-4',
+        isDark ? 'bg-slate-800' : 'bg-white'
+      )}
+    >
+      <View className="flex-row items-center mb-3">
+        <DollarSign size={18} color="#10B981" />
+        <Text
+          className={cn(
+            'text-base font-bold ml-2',
+            isDark ? 'text-white' : 'text-slate-900'
+          )}
+        >
+          Tank Breakdown
+        </Text>
+      </View>
+
+      <View className="flex-row justify-between items-center mb-2">
+        <Text
+          className={cn(
+            'text-sm',
+            isDark ? 'text-slate-400' : 'text-slate-500'
+          )}
+        >
+          Total Fish
+        </Text>
+        <Text
+          className={cn(
+            'text-sm font-semibold',
+            isDark ? 'text-white' : 'text-slate-900'
+          )}
+        >
+          {fish.length}
+        </Text>
+      </View>
+
+      <View className="flex-row justify-between items-center mb-2">
+        <Text
+          className={cn(
+            'text-sm',
+            isDark ? 'text-slate-400' : 'text-slate-500'
+          )}
+        >
+          Est. Cost Range
+        </Text>
+        <Text
+          className={cn(
+            'text-sm font-semibold',
+            isDark ? 'text-white' : 'text-slate-900'
+          )}
+        >
+          ${totalMinCost} - ${totalMaxCost}
+        </Text>
+      </View>
+
+      <View
+        className={cn(
+          'mt-2 pt-2 border-t flex-row justify-between items-center',
+          isDark ? 'border-slate-700' : 'border-slate-200'
+        )}
+      >
+        <Text
+          className={cn(
+            'text-sm font-semibold',
+            isDark ? 'text-slate-300' : 'text-slate-600'
+          )}
+        >
+          Est. Total
+        </Text>
+        <Text className="text-lg font-bold text-emerald-500">
+          ~${avgCost.toFixed(0)}
+        </Text>
+      </View>
+    </View>
   );
 };
 
@@ -424,16 +624,31 @@ export default function MyTankScreen() {
   const removeFishFromTank = useTankStore((s) => s.removeFishFromTank);
 
   const activeTank = tanks.find((t) => t.id === activeTankId);
-  const activeTankFish = activeTank?.fishIds
-    .map((id) => getFishById(id))
-    .filter((f): f is Fish => f !== undefined) || [];
+  const activeTankFish = useMemo(() => {
+    return activeTank?.fishIds
+      .map((id) => getFishById(id))
+      .filter((f): f is Fish => f !== undefined) || [];
+  }, [activeTank?.fishIds]);
 
-  const compatibility = activeTankFish.length >= 2
-    ? checkMultipleFishCompatibility(activeTank?.fishIds || [], activeTank?.size)
-    : null;
+  const compatibility = useMemo(() => {
+    return activeTankFish.length >= 2
+      ? checkMultipleFishCompatibility(activeTank?.fishIds || [], activeTank?.size)
+      : null;
+  }, [activeTankFish, activeTank?.fishIds, activeTank?.size]);
+
+  const incompatibleResults = useMemo(() => {
+    if (!compatibility) return [];
+    return compatibility.results.filter(r => r.status !== 'compatible');
+  }, [compatibility]);
 
   const handleCreateTank = (name: string, size: number, waterType: WaterType) => {
     addTank(name, size, waterType);
+  };
+
+  const handleRemoveFishForFix = (fishId: string) => {
+    if (activeTank) {
+      removeFishFromTank(activeTank.id, fishId);
+    }
   };
 
   return (
@@ -531,6 +746,33 @@ export default function MyTankScreen() {
               {/* Active Tank Details */}
               {activeTank && (
                 <View className="mt-6">
+                  {/* Tank Breakdown */}
+                  {activeTankFish.length > 0 && (
+                    <TankBreakdown fish={activeTankFish} isDark={isDark} />
+                  )}
+
+                  {/* Compatibility Issues with Fix Suggestions */}
+                  {incompatibleResults.length > 0 && (
+                    <View className="mb-4">
+                      <Text
+                        className={cn(
+                          'text-sm font-semibold mb-3',
+                          isDark ? 'text-slate-300' : 'text-slate-600'
+                        )}
+                      >
+                        Compatibility Issues ({incompatibleResults.length})
+                      </Text>
+                      {incompatibleResults.map((result, i) => (
+                        <CompatibilityFixSuggestion
+                          key={`${result.fish1.id}-${result.fish2.id}`}
+                          result={result}
+                          onRemoveFish={handleRemoveFishForFix}
+                          isDark={isDark}
+                        />
+                      ))}
+                    </View>
+                  )}
+
                   <View className="flex-row justify-between items-center mb-3">
                     <Text
                       className={cn(
@@ -550,59 +792,6 @@ export default function MyTankScreen() {
                       <ChevronRight size={16} color="#0EA5E9" />
                     </Pressable>
                   </View>
-
-                  {/* Compatibility Warning */}
-                  {compatibility && compatibility.overallStatus !== 'compatible' && (
-                    <View
-                      className={cn(
-                        'rounded-xl p-4 mb-4',
-                        compatibility.overallStatus === 'conditional'
-                          ? 'bg-amber-500/10'
-                          : 'bg-red-500/10'
-                      )}
-                    >
-                      <View className="flex-row items-center mb-2">
-                        <AlertTriangle
-                          size={18}
-                          color={
-                            compatibility.overallStatus === 'conditional'
-                              ? '#F59E0B'
-                              : '#EF4444'
-                          }
-                        />
-                        <Text
-                          className={cn(
-                            'font-semibold ml-2',
-                            compatibility.overallStatus === 'conditional'
-                              ? 'text-amber-600'
-                              : 'text-red-600'
-                          )}
-                        >
-                          {compatibility.overallStatus === 'conditional'
-                            ? 'Compatibility Warning'
-                            : 'Compatibility Issue'}
-                        </Text>
-                      </View>
-                      {compatibility.tankSizeWarning && (
-                        <Text
-                          className={cn(
-                            'text-sm mb-1',
-                            isDark ? 'text-slate-300' : 'text-slate-600'
-                          )}
-                        >
-                          {compatibility.tankSizeWarning}
-                        </Text>
-                      )}
-                      <Pressable
-                        onPress={() => router.push('/(tabs)/compatibility')}
-                        className="mt-2"
-                      >
-                        <Text className="text-sky-500 text-sm font-medium">
-                          View Details
-                        </Text>
-                      </Pressable>
-                    </View>
-                  )}
 
                   {activeTankFish.length === 0 ? (
                     <View
