@@ -62,6 +62,7 @@ export interface TankSetup {
   size: number; // gallons
   waterType: WaterType;
   fishIds: string[];
+  plantIds: string[];
   createdAt: Date;
 }
 

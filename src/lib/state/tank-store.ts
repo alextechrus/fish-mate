@@ -11,6 +11,8 @@ interface TankState {
   updateTank: (id: string, updates: Partial<TankSetup>) => void;
   addFishToTank: (tankId: string, fishId: string) => void;
   removeFishFromTank: (tankId: string, fishId: string) => void;
+  addPlantToTank: (tankId: string, plantId: string) => void;
+  removePlantFromTank: (tankId: string, plantId: string) => void;
   setActiveTank: (id: string | null) => void;
   getActiveTank: () => TankSetup | undefined;
 }
@@ -29,6 +31,7 @@ export const useTankStore = create<TankState>()(
           size,
           waterType,
           fishIds: [],
+          plantIds: [],
           createdAt: new Date(),
         };
         set(state => ({
@@ -68,6 +71,26 @@ export const useTankStore = create<TankState>()(
           tanks: state.tanks.map(t =>
             t.id === tankId
               ? { ...t, fishIds: t.fishIds.filter(id => id !== fishId) }
+              : t
+          ),
+        }));
+      },
+
+      addPlantToTank: (tankId, plantId) => {
+        set(state => ({
+          tanks: state.tanks.map(t =>
+            t.id === tankId
+              ? { ...t, plantIds: [...(t.plantIds || []), plantId] }
+              : t
+          ),
+        }));
+      },
+
+      removePlantFromTank: (tankId, plantId) => {
+        set(state => ({
+          tanks: state.tanks.map(t =>
+            t.id === tankId
+              ? { ...t, plantIds: (t.plantIds || []).filter(id => id !== plantId) }
               : t
           ),
         }));

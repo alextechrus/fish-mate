@@ -21,13 +21,16 @@ import {
   CheckCircle,
   X,
   ChevronRight,
-  DollarSign,
+  PoundSterling,
   Lightbulb,
   ArrowRight,
+  Leaf,
 } from 'lucide-react-native';
 import { useColorScheme } from '@/lib/useColorScheme';
 import { useTankStore } from '@/lib/state/tank-store';
 import { getFishById, fishDatabase } from '@/lib/data/fish-database';
+import { getPlantById } from '@/lib/data/plant-database';
+import type { Plant } from '@/lib/data/plant-database';
 import { checkMultipleFishCompatibility, getSuggestedCompatibleFish } from '@/lib/utils/compatibility';
 import { WaterType, Fish, TankSetup, CompatibilityResult } from '@/lib/types/fish';
 import { cn } from '@/lib/cn';
@@ -415,7 +418,82 @@ const FishInTank = ({
               isDark ? 'text-slate-400' : 'text-slate-500'
             )}
           >
-            ~${avgPrice.toFixed(0)}
+            ~£{avgPrice.toFixed(0)}
+          </Text>
+        </View>
+      </View>
+      <Pressable
+        onPress={onRemove}
+        className="p-2"
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      >
+        <Trash2 size={18} color="#EF4444" />
+      </Pressable>
+    </Pressable>
+  );
+};
+
+const PlantInTank = ({
+  plant,
+  onRemove,
+  onPress,
+  isDark,
+}: {
+  plant: Plant;
+  onRemove: () => void;
+  onPress: () => void;
+  isDark: boolean;
+}) => {
+  const difficultyColor = {
+    easy: '#10B981',
+    moderate: '#F59E0B',
+    difficult: '#EF4444',
+  }[plant.difficulty];
+
+  const avgPrice = (plant.price.min + plant.price.max) / 2;
+
+  return (
+    <Pressable
+      onPress={onPress}
+      className={cn(
+        'flex-row items-center p-3 rounded-xl mb-2',
+        isDark ? 'bg-slate-800' : 'bg-white'
+      )}
+    >
+      <Image
+        source={{ uri: plant.imageUrl }}
+        className="w-14 h-14 rounded-xl"
+        resizeMode="cover"
+      />
+      <View className="flex-1 ml-3">
+        <Text
+          className={cn(
+            'text-base font-semibold',
+            isDark ? 'text-white' : 'text-slate-900'
+          )}
+        >
+          {plant.commonName}
+        </Text>
+        <View className="flex-row items-center mt-1">
+          <View
+            className="w-2 h-2 rounded-full mr-1"
+            style={{ backgroundColor: difficultyColor }}
+          />
+          <Text
+            className={cn(
+              'text-xs capitalize',
+              isDark ? 'text-slate-400' : 'text-slate-500'
+            )}
+          >
+            {plant.difficulty}
+          </Text>
+          <Text
+            className={cn(
+              'text-xs ml-2',
+              isDark ? 'text-slate-400' : 'text-slate-500'
+            )}
+          >
+            ~£{avgPrice.toFixed(0)}
           </Text>
         </View>
       </View>
@@ -538,7 +616,7 @@ const TankBreakdown = ({
       )}
     >
       <View className="flex-row items-center mb-3">
-        <DollarSign size={18} color="#10B981" />
+        <PoundSterling size={18} color="#10B981" />
         <Text
           className={cn(
             'text-base font-bold ml-2',
@@ -583,7 +661,7 @@ const TankBreakdown = ({
             isDark ? 'text-white' : 'text-slate-900'
           )}
         >
-          ${totalMinCost} - ${totalMaxCost}
+          £{totalMinCost} - £{totalMaxCost}
         </Text>
       </View>
 
@@ -602,7 +680,7 @@ const TankBreakdown = ({
           Est. Total
         </Text>
         <Text className="text-lg font-bold text-emerald-500">
-          ~${avgCost.toFixed(0)}
+          ~£{avgCost.toFixed(0)}
         </Text>
       </View>
     </View>
@@ -622,6 +700,7 @@ export default function MyTankScreen() {
   const removeTank = useTankStore((s) => s.removeTank);
   const setActiveTank = useTankStore((s) => s.setActiveTank);
   const removeFishFromTank = useTankStore((s) => s.removeFishFromTank);
+  const removePlantFromTank = useTankStore((s) => s.removePlantFromTank);
 
   const activeTank = tanks.find((t) => t.id === activeTankId);
   const activeTankFish = useMemo(() => {
@@ -629,6 +708,12 @@ export default function MyTankScreen() {
       .map((id) => getFishById(id))
       .filter((f): f is Fish => f !== undefined) || [];
   }, [activeTank?.fishIds]);
+
+  const activeTankPlants = useMemo(() => {
+    return (activeTank?.plantIds || [])
+      .map((id) => getPlantById(id))
+      .filter((p): p is Plant => p !== undefined);
+  }, [activeTank?.plantIds]);
 
   const compatibility = useMemo(() => {
     return activeTankFish.length >= 2
@@ -679,7 +764,7 @@ export default function MyTankScreen() {
           </View>
           {activeTank && (
             <Text className="text-white/80 text-sm mt-2">
-              {activeTank.name} • {activeTankFish.length} fish
+              {activeTank.name} • {activeTankFish.length} fish, {activeTankPlants.length} plants
             </Text>
           )}
         </LinearGradient>
@@ -774,20 +859,23 @@ export default function MyTankScreen() {
                   )}
 
                   <View className="flex-row justify-between items-center mb-3">
-                    <Text
-                      className={cn(
-                        'text-lg font-bold',
-                        isDark ? 'text-white' : 'text-slate-900'
-                      )}
-                    >
-                      Fish in {activeTank.name}
-                    </Text>
+                    <View className="flex-row items-center">
+                      <FishIcon size={18} color={isDark ? '#94A3B8' : '#64748B'} />
+                      <Text
+                        className={cn(
+                          'text-lg font-bold ml-2',
+                          isDark ? 'text-white' : 'text-slate-900'
+                        )}
+                      >
+                        Fish
+                      </Text>
+                    </View>
                     <Pressable
-                      onPress={() => router.push('/(tabs)/browse')}
+                      onPress={() => router.push('/(tabs)/search')}
                       className="flex-row items-center"
                     >
                       <Text className="text-sky-500 text-sm font-medium mr-1">
-                        Add Fish
+                        Add
                       </Text>
                       <ChevronRight size={16} color="#0EA5E9" />
                     </Pressable>
@@ -796,7 +884,7 @@ export default function MyTankScreen() {
                   {activeTankFish.length === 0 ? (
                     <View
                       className={cn(
-                        'p-6 rounded-xl items-center',
+                        'p-6 rounded-xl items-center mb-6',
                         isDark ? 'bg-slate-800' : 'bg-white'
                       )}
                     >
@@ -810,17 +898,74 @@ export default function MyTankScreen() {
                           isDark ? 'text-slate-400' : 'text-slate-500'
                         )}
                       >
-                        No fish in this tank yet.{'\n'}Browse and add fish to get
-                        started!
+                        No fish yet. Search and add fish to get started!
                       </Text>
                     </View>
                   ) : (
-                    activeTankFish.map((fish) => (
-                      <FishInTank
-                        key={fish.id}
-                        fish={fish}
-                        onRemove={() => removeFishFromTank(activeTank.id, fish.id)}
-                        onPress={() => router.push(`/fish/${fish.id}`)}
+                    <View className="mb-6">
+                      {activeTankFish.map((fish) => (
+                        <FishInTank
+                          key={fish.id}
+                          fish={fish}
+                          onRemove={() => removeFishFromTank(activeTank.id, fish.id)}
+                          onPress={() => router.push(`/fish/${fish.id}`)}
+                          isDark={isDark}
+                        />
+                      ))}
+                    </View>
+                  )}
+
+                  {/* Plants Section */}
+                  <View className="flex-row justify-between items-center mb-3">
+                    <View className="flex-row items-center">
+                      <Leaf size={18} color="#10B981" />
+                      <Text
+                        className={cn(
+                          'text-lg font-bold ml-2',
+                          isDark ? 'text-white' : 'text-slate-900'
+                        )}
+                      >
+                        Plants
+                      </Text>
+                    </View>
+                    <Pressable
+                      onPress={() => router.push('/(tabs)/search')}
+                      className="flex-row items-center"
+                    >
+                      <Text className="text-emerald-500 text-sm font-medium mr-1">
+                        Add
+                      </Text>
+                      <ChevronRight size={16} color="#10B981" />
+                    </Pressable>
+                  </View>
+
+                  {activeTankPlants.length === 0 ? (
+                    <View
+                      className={cn(
+                        'p-6 rounded-xl items-center',
+                        isDark ? 'bg-slate-800' : 'bg-white'
+                      )}
+                    >
+                      <Leaf
+                        size={32}
+                        color={isDark ? '#64748B' : '#94A3B8'}
+                      />
+                      <Text
+                        className={cn(
+                          'text-sm mt-3 text-center',
+                          isDark ? 'text-slate-400' : 'text-slate-500'
+                        )}
+                      >
+                        No plants yet. Add plants for a healthy ecosystem!
+                      </Text>
+                    </View>
+                  ) : (
+                    activeTankPlants.map((plant) => (
+                      <PlantInTank
+                        key={plant.id}
+                        plant={plant}
+                        onRemove={() => removePlantFromTank(activeTank.id, plant.id)}
+                        onPress={() => router.push(`/plant/${plant.id}`)}
                         isDark={isDark}
                       />
                     ))

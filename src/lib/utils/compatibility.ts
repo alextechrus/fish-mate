@@ -277,6 +277,16 @@ export const checkMultipleFishCompatibility = (fishIds: string[], tankSize?: num
   };
 };
 
+// Check compatibility by fish IDs
+export const checkFishCompatibilityById = (fishId1: string, fishId2: string): CompatibilityResult | null => {
+  const fish1 = getFishById(fishId1);
+  const fish2 = getFishById(fishId2);
+
+  if (!fish1 || !fish2) return null;
+
+  return checkTwoFishCompatibility(fish1, fish2);
+};
+
 // Get suggested compatible fish
 export const getSuggestedCompatibleFish = (currentFishIds: string[], allFish: Fish[]): Fish[] => {
   const currentFish = currentFishIds.map(id => getFishById(id)).filter((f): f is Fish => f !== undefined);

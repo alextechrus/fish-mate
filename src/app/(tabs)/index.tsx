@@ -3,11 +3,13 @@ import { View, Text, ScrollView, Pressable, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { Fish as FishIcon, Droplets, Sparkles, ChevronRight, Waves } from 'lucide-react-native';
+import { Fish as FishIcon, Droplets, Sparkles, ChevronRight, Waves, Leaf, Search } from 'lucide-react-native';
 import { useColorScheme } from '@/lib/useColorScheme';
 import { fishDatabase, getBeginnerFriendlyFish, getFreshwaterFish, getSaltwaterFish } from '@/lib/data/fish-database';
+import { plantDatabase, getEasyPlants } from '@/lib/data/plant-database';
 import { Fish } from '@/lib/types/fish';
 import { cn } from '@/lib/cn';
+import type { Plant } from '@/lib/data/plant-database';
 
 const FishCard = ({ fish, onPress }: { fish: Fish; onPress: () => void }) => {
   const colorScheme = useColorScheme();
@@ -68,6 +70,65 @@ const FishCard = ({ fish, onPress }: { fish: Fish; onPress: () => void }) => {
   );
 };
 
+const PlantCard = ({ plant, onPress }: { plant: Plant; onPress: () => void }) => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
+  const difficultyColor = {
+    easy: '#10B981',
+    moderate: '#F59E0B',
+    difficult: '#EF4444',
+  }[plant.difficulty];
+
+  return (
+    <Pressable
+      onPress={onPress}
+      className={cn(
+        'mr-4 w-40 rounded-2xl overflow-hidden',
+        isDark ? 'bg-slate-800' : 'bg-white'
+      )}
+      style={{
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: isDark ? 0.3 : 0.1,
+        shadowRadius: 8,
+        elevation: 4,
+      }}
+    >
+      <Image
+        source={{ uri: plant.imageUrl }}
+        className="w-full h-24"
+        resizeMode="cover"
+      />
+      <View className="p-3">
+        <Text
+          className={cn(
+            'text-sm font-semibold mb-1',
+            isDark ? 'text-white' : 'text-slate-900'
+          )}
+          numberOfLines={1}
+        >
+          {plant.commonName}
+        </Text>
+        <View className="flex-row items-center">
+          <View
+            className="w-2 h-2 rounded-full mr-1.5"
+            style={{ backgroundColor: difficultyColor }}
+          />
+          <Text
+            className={cn(
+              'text-xs capitalize',
+              isDark ? 'text-slate-400' : 'text-slate-500'
+            )}
+          >
+            {plant.difficulty}
+          </Text>
+        </View>
+      </View>
+    </Pressable>
+  );
+};
+
 const QuickActionCard = ({
   icon: Icon,
   title,
@@ -103,22 +164,30 @@ const QuickActionCard = ({
 
 const SectionHeader = ({
   title,
+  icon: Icon,
+  iconColor,
   onSeeAll,
   isDark,
 }: {
   title: string;
+  icon?: React.ElementType;
+  iconColor?: string;
   onSeeAll?: () => void;
   isDark: boolean;
 }) => (
   <View className="flex-row justify-between items-center px-5 mb-3">
-    <Text
-      className={cn(
-        'text-lg font-bold',
-        isDark ? 'text-white' : 'text-slate-900'
-      )}
-    >
-      {title}
-    </Text>
+    <View className="flex-row items-center">
+      {Icon && <Icon size={18} color={iconColor || (isDark ? '#94A3B8' : '#64748B')} />}
+      <Text
+        className={cn(
+          'text-lg font-bold',
+          isDark ? 'text-white' : 'text-slate-900',
+          Icon ? 'ml-2' : ''
+        )}
+      >
+        {title}
+      </Text>
+    </View>
     {onSeeAll && (
       <Pressable onPress={onSeeAll} className="flex-row items-center">
         <Text className="text-sky-500 text-sm font-medium mr-1">See All</Text>
@@ -136,9 +205,14 @@ export default function HomeScreen() {
   const beginnerFish = getBeginnerFriendlyFish().slice(0, 6);
   const freshwaterFish = getFreshwaterFish().slice(0, 6);
   const saltwaterFish = getSaltwaterFish().slice(0, 6);
+  const easyPlants = getEasyPlants().slice(0, 6);
 
   const handleFishPress = (fish: Fish) => {
     router.push(`/fish/${fish.id}`);
+  };
+
+  const handlePlantPress = (plant: Plant) => {
+    router.push(`/plant/${plant.id}`);
   };
 
   return (
@@ -169,8 +243,8 @@ export default function HomeScreen() {
             </View>
 
             <Text className="text-white/90 text-base leading-6">
-              Find compatible fish for your aquarium and learn essential care
-              requirements for each species.
+              Find compatible fish and plants for your aquarium. Plan your
+              perfect underwater ecosystem.
             </Text>
           </LinearGradient>
 
@@ -178,27 +252,52 @@ export default function HomeScreen() {
           <View className="px-5 -mt-6 mb-6">
             <View className="flex-row gap-3">
               <QuickActionCard
-                icon={Sparkles}
-                title="Check Compatibility"
-                subtitle="Mix & match fish"
+                icon={Search}
+                title="Browse & Search"
+                subtitle="Fish & plants"
                 colors={['#8B5CF6', '#6366F1']}
-                onPress={() => router.push('/(tabs)/compatibility')}
+                onPress={() => router.push('/(tabs)/search')}
               />
               <QuickActionCard
                 icon={Waves}
                 title="My Tank"
-                subtitle="Manage your fish"
+                subtitle="Manage your tank"
                 colors={['#10B981', '#059669']}
                 onPress={() => router.push('/(tabs)/my-tank')}
               />
             </View>
           </View>
 
+          {/* Easy Plants */}
+          <View className="mb-6">
+            <SectionHeader
+              title="Easy Plants"
+              icon={Leaf}
+              iconColor="#10B981"
+              onSeeAll={() => router.push('/(tabs)/search')}
+              isDark={isDark}
+            />
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 20 }}
+              style={{ flexGrow: 0 }}
+            >
+              {easyPlants.map((plant) => (
+                <PlantCard
+                  key={plant.id}
+                  plant={plant}
+                  onPress={() => handlePlantPress(plant)}
+                />
+              ))}
+            </ScrollView>
+          </View>
+
           {/* Beginner Friendly */}
           <View className="mb-6">
             <SectionHeader
               title="Beginner Friendly"
-              onSeeAll={() => router.push('/(tabs)/browse')}
+              onSeeAll={() => router.push('/(tabs)/search')}
               isDark={isDark}
             />
             <ScrollView
@@ -221,7 +320,7 @@ export default function HomeScreen() {
           <View className="mb-6">
             <SectionHeader
               title="Freshwater Fish"
-              onSeeAll={() => router.push('/(tabs)/browse')}
+              onSeeAll={() => router.push('/(tabs)/search')}
               isDark={isDark}
             />
             <ScrollView
@@ -244,7 +343,7 @@ export default function HomeScreen() {
           <View className="mb-6">
             <SectionHeader
               title="Saltwater Fish"
-              onSeeAll={() => router.push('/(tabs)/browse')}
+              onSeeAll={() => router.push('/(tabs)/search')}
               isDark={isDark}
             />
             <ScrollView
@@ -291,9 +390,9 @@ export default function HomeScreen() {
                   isDark ? 'text-slate-300' : 'text-slate-600'
                 )}
               >
-                Always research fish compatibility before adding new species to
-                your tank. Consider factors like temperament, water parameters,
-                and tank size requirements.
+                Adding live plants to your tank helps maintain water quality,
+                provides hiding spots for fish, and creates a natural ecosystem.
+                Start with easy plants like Java Fern or Anubias!
               </Text>
             </View>
           </View>

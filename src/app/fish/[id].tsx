@@ -28,6 +28,7 @@ import {
   Info,
   X,
   DollarSign,
+  PoundSterling,
   MapPin,
   ExternalLink,
   Beaker,
@@ -481,7 +482,6 @@ export default function FishProfileScreen() {
             </Text>
           </View>
 
-          {/* Pricing & Store */}
           <View
             className={cn(
               'rounded-2xl p-4 mb-6',
@@ -489,7 +489,7 @@ export default function FishProfileScreen() {
             )}
           >
             <SectionHeader
-              icon={DollarSign}
+              icon={PoundSterling}
               title="Pricing"
               isDark={isDark}
               iconColor="#10B981"
@@ -510,7 +510,7 @@ export default function FishProfileScreen() {
                   isDark ? 'text-white' : 'text-slate-900'
                 )}
               >
-                ${fish.price.min} - ${fish.price.max}
+                £{fish.price.min} - £{fish.price.max}
               </Text>
             </View>
 
@@ -524,7 +524,7 @@ export default function FishProfileScreen() {
                 Average Price
               </Text>
               <Text className="text-lg font-bold text-emerald-500">
-                ~${avgPrice.toFixed(0)}
+                ~£{avgPrice.toFixed(0)}
               </Text>
             </View>
 

@@ -1,14 +1,14 @@
 # FishMate - Aquarium Fish Compatibility App
 
-A cross-platform mobile app that helps aquarium hobbyists determine fish compatibility and learn essential care requirements for each fish species.
+A cross-platform mobile app that helps aquarium hobbyists determine fish and plant compatibility and learn essential care requirements for each species.
 
 ## Features
 
 ### Home Screen
-- Welcome dashboard with featured fish sections
-- Quick access to Compatibility Checker and My Tank
-- Beginner-friendly, freshwater, and saltwater fish categories
-- Daily tips for aquarium care
+- Welcome dashboard with featured fish and plant sections
+- Quick access to Search and My Tank
+- Easy plants, beginner-friendly fish, freshwater, and saltwater categories
+- Daily tips for aquarium care with plant recommendations
 
 ### Search Tab (Combined Fish & Plant Browser)
 - Toggle between Fish and Plants modes
@@ -17,20 +17,36 @@ A cross-platform mobile app that helps aquarium hobbyists determine fish compati
 - Filter by temperament (peaceful/semi-aggressive/aggressive)
 - Filter by care level (beginner/intermediate/advanced)
 - Browse aquarium plants with difficulty and lighting filters
-- Integrated Compatibility Checker for fish
+- Tap sparkle icon on any fish to check compatibility with other fish
 - AI-generated unique images for each species
+- Prices displayed in GBP (£)
 
 ### Fish Profiles
 Each fish has a dedicated profile page with:
 - Common name and scientific name
 - Temperament indicator
+- Care level indicator (beginner/intermediate/advanced)
 - Minimum tank size requirements
 - Water parameters (temperature, pH, hardness)
 - Diet type and feeding notes
 - Tank zone preference (top/middle/bottom)
 - Tank requirements (plants, hiding spaces, schooling needs)
 - Compatibility lists (compatible, conditional, incompatible fish)
-- Price range information
+- Price range in GBP (£)
+- Find stores near me feature
+
+### Plant Profiles
+Each plant has a dedicated profile page with:
+- Common name and scientific name
+- Difficulty level (easy/moderate/difficult)
+- Lighting requirements (low/medium/high)
+- CO2 requirements
+- Growth rate and placement
+- Water parameters (temperature, pH, hardness)
+- Care notes
+- Fish compatibility (safe fish vs fish to avoid)
+- Price range in GBP (£)
+- Find stores near me feature
 
 ### Aquarium Plants Database
 17+ aquatic plants including:
@@ -39,29 +55,22 @@ Each fish has a dedicated profile page with:
 - Difficult plants: Dwarf Baby Tears, Rotala Rotundifolia, Monte Carlo
 - Floating plants: Amazon Frogbit, Red Root Floater, Duckweed
 
-Each plant includes:
-- Difficulty level (easy/moderate/difficult)
-- Lighting requirements (low/medium/high)
-- CO2 requirements
-- Water parameters
-- Fish compatibility information
-- Price ranges
-
 ### Compatibility Checker
-- Multi-select fish picker
+- Multi-select fish picker via sparkle icon in search
 - Visual compatibility indicators (green/yellow/red)
 - Pair-by-pair analysis with detailed explanations
 - Tank size validation and warnings
-- Suggested compatible fish based on current selection
 - Overall tank harmony summary
 
 ### My Tank
 - Create multiple tank profiles
 - Set tank name, size, and water type
 - Add/remove fish from tanks
+- Add/remove plants from tanks
 - Real-time compatibility monitoring
 - Overstocking warnings
-- Quick access to fish profiles
+- Quick access to fish and plant profiles
+- Tank cost breakdown in GBP (£)
 
 ### Profile & Settings
 - User authentication (local)
