@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   TextInput,
   Alert,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -17,12 +18,10 @@ import {
   LogIn,
   LogOut,
   Share2,
-  ChevronRight,
   Fish as FishIcon,
   X,
   Send,
   Waves,
-  Calendar,
   Trash2,
   CheckCircle,
   AlertTriangle,
@@ -273,18 +272,21 @@ const SharedTankCard = ({
   );
 };
 
-export default function ProfileScreen() {
+// Inner component that uses stores - only rendered after hydration
+function ProfileContent({ isDark }: { isDark: boolean }) {
   const router = useRouter();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
 
-  const user = useAuthStore(s => s.user);
-  const isAuthenticated = useAuthStore(s => s.isAuthenticated);
-  const logout = useAuthStore(s => s.logout);
-  const sharedTanks = useAuthStore(s => s.user?.sharedTanks || []);
-  const removeSharedTank = useAuthStore(s => s.removeSharedTank);
+  // Get auth state using individual selectors
+  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const logout = useAuthStore((s) => s.logout);
+  const removeSharedTank = useAuthStore((s) => s.removeSharedTank);
 
-  const tanks = useTankStore(s => s.tanks);
+  // Derive sharedTanks from user
+  const sharedTanks = user?.sharedTanks ?? [];
+
+  // Get tanks from tank store using selector
+  const tanks = useTankStore((s) => s.tanks);
 
   const [shareModalVisible, setShareModalVisible] = useState(false);
   const [selectedTank, setSelectedTank] = useState<TankSetup | null>(null);
@@ -616,4 +618,28 @@ export default function ProfileScreen() {
       />
     </View>
   );
+}
+
+// Wrapper component that handles hydration
+export default function ProfileScreen() {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
+  // Track hydration state to avoid infinite loop with zustand persist
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
+
+  // Show loading while hydrating
+  if (!isHydrated) {
+    return (
+      <View className={cn('flex-1 items-center justify-center', isDark ? 'bg-slate-900' : 'bg-slate-50')}>
+        <ActivityIndicator size="large" color="#0EA5E9" />
+      </View>
+    );
+  }
+
+  return <ProfileContent isDark={isDark} />;
 }
