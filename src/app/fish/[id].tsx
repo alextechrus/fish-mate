@@ -42,7 +42,7 @@ import { useFishImage } from '@/lib/hooks/useImageUrl';
 
 // Fish image component that uses generated images
 const FishImageDisplay = ({ fish, className, style }: { fish: Fish; className?: string; style?: object }) => {
-  const imageUrl = useFishImage(fish.id, fish.imageUrl);
+  const imageUrl = useFishImage(fish.id, fish.imageUrl, fish.commonName, fish.scientificName);
   return (
     <Image
       source={{ uri: imageUrl }}

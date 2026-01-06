@@ -71,7 +71,7 @@ const FilterChip = ({
 
 // Fish image component that uses generated images
 const FishImage = ({ fish, className }: { fish: Fish; className?: string }) => {
-  const imageUrl = useFishImage(fish.id, fish.imageUrl);
+  const imageUrl = useFishImage(fish.id, fish.imageUrl, fish.commonName, fish.scientificName);
   return (
     <Image
       source={{ uri: imageUrl }}
@@ -83,7 +83,7 @@ const FishImage = ({ fish, className }: { fish: Fish; className?: string }) => {
 
 // Plant image component that uses generated images
 const PlantImage = ({ plant, className }: { plant: Plant; className?: string }) => {
-  const imageUrl = usePlantImage(plant.id, plant.imageUrl);
+  const imageUrl = usePlantImage(plant.id, plant.imageUrl, plant.commonName, plant.scientificName);
   return (
     <Image
       source={{ uri: imageUrl }}

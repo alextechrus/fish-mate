@@ -76,13 +76,14 @@ Each plant has a dedicated profile page with:
 - User authentication (local)
 - Tank sharing with other users
 - Access shared tanks from other users
-- AI Image Generation feature
+- AI Image Generation feature using Ideogram 3
 
-### AI Image Generation
-- Generate unique, realistic images for each fish and plant species
-- Uses Nano Banana Pro API (Gemini) for image generation
-- Images stored locally and used throughout the app
-- Access via Profile > Settings > Generate AI Images
+### AI-Generated Images
+- Unique photorealistic images for each fish and plant species
+- Images are automatically generated on-demand using Ideogram 3.0 API
+- Generated images are cached locally for fast loading
+- Falls back to stock images if generation fails
+- Can manually regenerate images from Profile > Generate Images
 
 ## Tech Stack
 

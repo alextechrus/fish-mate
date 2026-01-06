@@ -304,8 +304,13 @@ export default function PlantProfileScreen() {
 
   const plant = getPlantById(id || '');
 
-  // Call hook unconditionally with fallback
-  const imageUrl = usePlantImage(id || '', plant?.imageUrl || '');
+  // Call hook unconditionally with fallback - pass name for auto-generation
+  const imageUrl = usePlantImage(
+    id || '',
+    plant?.imageUrl || '',
+    plant?.commonName,
+    plant?.scientificName
+  );
 
   if (!plant) {
     return (

@@ -15,7 +15,7 @@ import { useFishImage, usePlantImage } from '@/lib/hooks/useImageUrl';
 const FishCard = ({ fish, onPress }: { fish: Fish; onPress: () => void }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
-  const imageUrl = useFishImage(fish.id, fish.imageUrl);
+  const imageUrl = useFishImage(fish.id, fish.imageUrl, fish.commonName, fish.scientificName);
 
   const temperamentColor = {
     peaceful: '#10B981',
@@ -75,7 +75,7 @@ const FishCard = ({ fish, onPress }: { fish: Fish; onPress: () => void }) => {
 const PlantCard = ({ plant, onPress }: { plant: Plant; onPress: () => void }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
-  const imageUrl = usePlantImage(plant.id, plant.imageUrl);
+  const imageUrl = usePlantImage(plant.id, plant.imageUrl, plant.commonName, plant.scientificName);
 
   const difficultyColor = {
     easy: '#10B981',

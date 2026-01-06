@@ -34,6 +34,31 @@ import type { Plant } from '@/lib/data/plant-database';
 import { checkMultipleFishCompatibility, getSuggestedCompatibleFish } from '@/lib/utils/compatibility';
 import { WaterType, Fish, TankSetup, CompatibilityResult } from '@/lib/types/fish';
 import { cn } from '@/lib/cn';
+import { useFishImage, usePlantImage } from '@/lib/hooks/useImageUrl';
+
+// Fish image component with auto-generation
+const FishImageDisplay = ({ fish }: { fish: Fish }) => {
+  const imageUrl = useFishImage(fish.id, fish.imageUrl, fish.commonName, fish.scientificName);
+  return (
+    <Image
+      source={{ uri: imageUrl }}
+      className="w-14 h-14 rounded-xl"
+      resizeMode="cover"
+    />
+  );
+};
+
+// Plant image component with auto-generation
+const PlantImageDisplay = ({ plant }: { plant: Plant }) => {
+  const imageUrl = usePlantImage(plant.id, plant.imageUrl, plant.commonName, plant.scientificName);
+  return (
+    <Image
+      source={{ uri: imageUrl }}
+      className="w-14 h-14 rounded-xl"
+      resizeMode="cover"
+    />
+  );
+};
 
 const CreateTankModal = ({
   visible,
@@ -385,11 +410,7 @@ const FishInTank = ({
         isDark ? 'bg-slate-800' : 'bg-white'
       )}
     >
-      <Image
-        source={{ uri: fish.imageUrl }}
-        className="w-14 h-14 rounded-xl"
-        resizeMode="cover"
-      />
+      <FishImageDisplay fish={fish} />
       <View className="flex-1 ml-3">
         <Text
           className={cn(
@@ -460,11 +481,7 @@ const PlantInTank = ({
         isDark ? 'bg-slate-800' : 'bg-white'
       )}
     >
-      <Image
-        source={{ uri: plant.imageUrl }}
-        className="w-14 h-14 rounded-xl"
-        resizeMode="cover"
-      />
+      <PlantImageDisplay plant={plant} />
       <View className="flex-1 ml-3">
         <Text
           className={cn(
