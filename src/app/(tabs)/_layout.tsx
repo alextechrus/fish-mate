@@ -1,6 +1,6 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { Home, Search, GitCompare, Anchor, User } from 'lucide-react-native';
+import { Home, Search, Anchor, User } from 'lucide-react-native';
 import { useColorScheme } from '@/lib/useColorScheme';
 
 export default function TabLayout() {
@@ -36,17 +36,10 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="browse"
+        name="search"
         options={{
-          title: 'Browse',
+          title: 'Search',
           tabBarIcon: ({ color, size }) => <Search size={size} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="compatibility"
-        options={{
-          title: 'Checker',
-          tabBarIcon: ({ color, size }) => <GitCompare size={size} color={color} />,
         }}
       />
       <Tabs.Screen
@@ -61,6 +54,19 @@ export default function TabLayout() {
         options={{
           title: 'Profile',
           tabBarIcon: ({ color, size }) => <User size={size} color={color} />,
+        }}
+      />
+      {/* Hide old screens but keep them as routes within tabs */}
+      <Tabs.Screen
+        name="browse"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="compatibility"
+        options={{
+          href: null,
         }}
       />
     </Tabs>
