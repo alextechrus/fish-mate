@@ -10,10 +10,12 @@ import { plantDatabase, getEasyPlants } from '@/lib/data/plant-database';
 import { Fish } from '@/lib/types/fish';
 import { cn } from '@/lib/cn';
 import type { Plant } from '@/lib/data/plant-database';
+import { useFishImage, usePlantImage } from '@/lib/hooks/useImageUrl';
 
 const FishCard = ({ fish, onPress }: { fish: Fish; onPress: () => void }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
+  const imageUrl = useFishImage(fish.id, fish.imageUrl);
 
   const temperamentColor = {
     peaceful: '#10B981',
@@ -37,7 +39,7 @@ const FishCard = ({ fish, onPress }: { fish: Fish; onPress: () => void }) => {
       }}
     >
       <Image
-        source={{ uri: fish.imageUrl }}
+        source={{ uri: imageUrl }}
         className="w-full h-24"
         resizeMode="cover"
       />
@@ -73,6 +75,7 @@ const FishCard = ({ fish, onPress }: { fish: Fish; onPress: () => void }) => {
 const PlantCard = ({ plant, onPress }: { plant: Plant; onPress: () => void }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
+  const imageUrl = usePlantImage(plant.id, plant.imageUrl);
 
   const difficultyColor = {
     easy: '#10B981',
@@ -96,7 +99,7 @@ const PlantCard = ({ plant, onPress }: { plant: Plant; onPress: () => void }) =>
       }}
     >
       <Image
-        source={{ uri: plant.imageUrl }}
+        source={{ uri: imageUrl }}
         className="w-full h-24"
         resizeMode="cover"
       />

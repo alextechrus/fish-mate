@@ -1,7 +1,7 @@
 import * as FileSystem from 'expo-file-system';
 
-const API_KEY = process.env.EXPO_PUBLIC_VIBECODE_GOOGLE_API_KEY;
-const API_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:generateContent';
+const API_KEY = process.env.EXPO_PUBLIC_VIBECODE_IDEOGRAM_API_KEY;
+const API_ENDPOINT = 'https://api.ideogram.ai/v1/ideogram-v3/generate';
 
 export interface GenerationResult {
   id: string;
@@ -16,51 +16,44 @@ export async function generateImage(
   filename: string
 ): Promise<{ success: boolean; imageUri?: string; error?: string }> {
   try {
+    const formData = new FormData();
+    formData.append('prompt', prompt);
+    formData.append('aspect_ratio', '1x1');
+    formData.append('rendering_speed', 'TURBO');
+    formData.append('magic_prompt', 'ON');
+    formData.append('style_type', 'REALISTIC');
+    formData.append('num_images', '1');
+
     const response = await fetch(API_ENDPOINT, {
       method: 'POST',
       headers: {
-        'x-goog-api-key': API_KEY || '',
-        'Content-Type': 'application/json',
+        'Api-Key': API_KEY || '',
       },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [{ text: prompt }],
-          },
-        ],
-        generationConfig: {
-          responseModalities: ['Image'],
-          imageConfig: { aspectRatio: '1:1', imageSize: '1K' },
-        },
-      }),
+      body: formData,
     });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return {
+        success: false,
+        error: errorData.message || `API request failed with status ${response.status}`,
+      };
+    }
 
     const data = await response.json();
 
-    if (!response.ok) {
+    if (!data.data?.[0]?.url) {
       return {
         success: false,
-        error: data.error?.message || 'API request failed',
+        error: 'No image URL in response',
       };
     }
 
-    const imagePart = data.candidates?.[0]?.content?.parts?.find(
-      (p: { inlineData?: { data: string } }) => p.inlineData
-    );
-
-    if (!imagePart) {
-      return {
-        success: false,
-        error: 'No image generated from API',
-      };
-    }
-
-    const base64Image = imagePart.inlineData.data;
+    const imageUrl = data.data[0].url;
     const fileUri = FileSystem.documentDirectory + filename;
 
-    await FileSystem.writeAsStringAsync(fileUri, base64Image, {
-      encoding: FileSystem.EncodingType.Base64,
-    });
+    // Download the image immediately as URLs expire quickly
+    await FileSystem.downloadAsync(imageUrl, fileUri);
 
     return {
       success: true,
@@ -111,7 +104,7 @@ export async function generateAllFishImages(
 
     // Small delay between requests to avoid rate limiting
     if (i < fishList.length - 1) {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 500));
     }
   }
 
@@ -146,7 +139,7 @@ export async function generateAllPlantImages(
 
     // Small delay between requests to avoid rate limiting
     if (i < plantList.length - 1) {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 500));
     }
   }
 
@@ -176,4 +169,44 @@ export async function getLocalImageUri(
     return FileSystem.documentDirectory + filename;
   }
   return null;
+}
+
+// Generate a single fish image on demand
+export async function generateFishImageOnDemand(
+  id: string,
+  commonName: string,
+  scientificName: string
+): Promise<string | null> {
+  const filename = `fish_${id}.png`;
+
+  // Check if already exists
+  const exists = await checkImageExists(filename);
+  if (exists) {
+    return FileSystem.documentDirectory + filename;
+  }
+
+  const prompt = getFishPrompt(commonName, scientificName);
+  const result = await generateImage(prompt, filename);
+
+  return result.success ? result.imageUri ?? null : null;
+}
+
+// Generate a single plant image on demand
+export async function generatePlantImageOnDemand(
+  id: string,
+  commonName: string,
+  scientificName: string
+): Promise<string | null> {
+  const filename = `plant_${id}.png`;
+
+  // Check if already exists
+  const exists = await checkImageExists(filename);
+  if (exists) {
+    return FileSystem.documentDirectory + filename;
+  }
+
+  const prompt = getPlantPrompt(commonName, scientificName);
+  const result = await generateImage(prompt, filename);
+
+  return result.success ? result.imageUri ?? null : null;
 }
