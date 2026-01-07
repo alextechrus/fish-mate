@@ -3,7 +3,7 @@ import { View, Text, ScrollView, Pressable, Image, Dimensions } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { Fish as FishIcon, Droplets, Sparkles, ChevronRight, Waves, Leaf, Search, Lightbulb, ThermometerSnowflake, FlaskConical, Heart, Zap } from 'lucide-react-native';
+import { Fish as FishIcon, Droplets, Sparkles, ChevronRight, Waves, Leaf, Search, Lightbulb, ThermometerSnowflake, FlaskConical, Heart, Zap, Grid3X3 } from 'lucide-react-native';
 import { useColorScheme } from '@/lib/useColorScheme';
 import { fishDatabase, getBeginnerFriendlyFish, getFreshwaterFish, getSaltwaterFish } from '@/lib/data/fish-database';
 import { plantDatabase, getEasyPlants } from '@/lib/data/plant-database';
@@ -423,7 +423,7 @@ export default function HomeScreen() {
 
           {/* Quick Actions */}
           <View className="px-5 -mt-6 mb-6">
-            <View className="flex-row gap-3">
+            <View className="flex-row gap-3 mb-3">
               <QuickActionCard
                 icon={Search}
                 title="Browse & Search"
@@ -439,6 +439,31 @@ export default function HomeScreen() {
                 onPress={() => router.push('/(tabs)/my-tank')}
               />
             </View>
+            {/* Compatibility Chart Button */}
+            <Pressable
+              onPress={() => router.push('/compatibility-chart')}
+              className="overflow-hidden rounded-2xl"
+            >
+              <LinearGradient
+                colors={isDark ? ['#1E3A5F', '#0F172A'] : ['#F59E0B', '#D97706']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={{
+                  padding: 16,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                }}
+              >
+                <View className="bg-white/20 rounded-xl p-2 mr-3">
+                  <Grid3X3 size={24} color="white" />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-white font-bold text-base">Compatibility Chart</Text>
+                  <Text className="text-white/80 text-xs">Compare up to 5 fish at once</Text>
+                </View>
+                <ChevronRight size={20} color="white" />
+              </LinearGradient>
+            </Pressable>
           </View>
 
           {/* Freshwater Fish */}

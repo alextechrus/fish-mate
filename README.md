@@ -36,6 +36,7 @@ A cross-platform mobile app that helps aquarium hobbyists determine fish and pla
 ### Fish Profiles
 Each fish has a dedicated profile page with:
 - Common name and scientific name
+- **Species-accurate images** from Wikimedia Commons
 - Temperament indicator
 - Care level indicator (beginner/intermediate/advanced)
 - **Collapsible info card** with expandable sections for:
@@ -52,6 +53,7 @@ Each fish has a dedicated profile page with:
 ### Plant Profiles
 Each plant has a dedicated profile page with:
 - Common name and scientific name
+- **Species-accurate images** from Wikimedia Commons
 - **Collapsible info card** with expandable sections for:
   - **Difficulty** - Tap to see what each level means, requirements, and who it's suitable for
   - **Lighting** - Tap to see PAR values and lighting descriptions
@@ -80,6 +82,21 @@ Each plant has a dedicated profile page with:
 - Pair-by-pair analysis with detailed explanations
 - Tank size validation and warnings
 - Overall tank harmony summary
+
+### Compatibility Chart (NEW)
+- **Visual matrix/grid display** comparing up to 5 fish at once
+- Quick access from home page via "Compatibility Chart" button
+- **Interactive fish selection**:
+  - Add fish via search or tap
+  - Remove fish with one tap
+  - Visual fish thumbnails
+- **Color-coded compatibility matrix**:
+  - Green: Compatible pairs
+  - Yellow: Use caution
+  - Red: Not compatible
+- **Tap any cell** to see detailed compatibility info
+- **Overall compatibility score** with visual bar chart
+- Shows total compatible, conditional, and incompatible pair counts
 
 ### My Tank
 - Create multiple tank profiles

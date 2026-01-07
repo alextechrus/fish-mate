@@ -6,7 +6,7 @@ export const fishDatabase: Fish[] = [
     id: 'neon-tetra',
     commonName: 'Neon Tetra',
     scientificName: 'Paracheirodon innesi',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/Neon_tetra_in_aquarium.jpg/1280px-Neon_tetra_in_aquarium.jpg',
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Neonka_obecn%C3%A1_paracheirodon_innesi.jpg/1280px-Neonka_obecn%C3%A1_paracheirodon_innesi.jpg',
     waterType: 'freshwater',
     temperament: 'peaceful',
     minTankSize: 10,
