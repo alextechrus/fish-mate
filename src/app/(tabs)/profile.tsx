@@ -36,7 +36,6 @@ import {
   Shield,
   FileText,
   Info,
-  Wand2,
 } from 'lucide-react-native';
 import { useColorScheme } from '@/lib/useColorScheme';
 import { useAuthStore, SharedTank } from '@/lib/state/auth-store';
@@ -908,41 +907,6 @@ function SettingsContent({ isDark }: { isDark: boolean }) {
                 onPress={handleTermsOfService}
                 isDark={isDark}
                 iconColor="#6366F1"
-              />
-            </View>
-          </View>
-
-          {/* Admin Section */}
-          <View className="px-5 mt-6">
-            <Text
-              className={cn(
-                'text-lg font-bold mb-3',
-                isDark ? 'text-white' : 'text-slate-900'
-              )}
-            >
-              Admin Tools
-            </Text>
-
-            <View
-              className={cn(
-                'rounded-2xl overflow-hidden',
-                isDark ? 'bg-slate-800' : 'bg-white'
-              )}
-              style={{
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: isDark ? 0.3 : 0.1,
-                shadowRadius: 8,
-                elevation: 4,
-              }}
-            >
-              <SettingsRow
-                icon={Wand2}
-                title="Generate AI Images"
-                subtitle="Create images for fish & plants"
-                onPress={() => router.push('/admin/generate-images')}
-                isDark={isDark}
-                iconColor="#8B5CF6"
               />
             </View>
           </View>
