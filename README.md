@@ -36,7 +36,7 @@ A cross-platform mobile app that helps aquarium hobbyists determine fish and pla
 ### Fish Profiles
 Each fish has a dedicated profile page with:
 - Common name and scientific name
-- **Species-accurate images** from Wikimedia Commons
+- **AI-generated aquarium images** - Species shown in realistic tank settings
 - Temperament indicator
 - Care level indicator (beginner/intermediate/advanced)
 - **Collapsible info card** with expandable sections for:
@@ -53,7 +53,7 @@ Each fish has a dedicated profile page with:
 ### Plant Profiles
 Each plant has a dedicated profile page with:
 - Common name and scientific name
-- **Species-accurate images** from Wikimedia Commons
+- **AI-generated aquarium images** - Plants shown in realistic tank settings
 - **Collapsible info card** with expandable sections for:
   - **Difficulty** - Tap to see what each level means, requirements, and who it's suitable for
   - **Lighting** - Tap to see PAR values and lighting descriptions
@@ -132,6 +132,8 @@ Each plant has a dedicated profile page with:
   - Rate the app in App Store
   - Report a bug via email
   - Send feedback via email
+- **Admin Tools**:
+  - AI Image Generator - Create aquarium images for all species
 - **Legal**:
   - Privacy Policy
   - Terms of Service
@@ -146,6 +148,7 @@ Each plant has a dedicated profile page with:
 - React Query for async operations
 - expo-linear-gradient for visual effects
 - lucide-react-native for icons
+- OpenAI gpt-image-1 for AI image generation
 
 ## Project Structure
 
@@ -157,16 +160,22 @@ src/
 │   │   ├── search.tsx     # Combined fish & plant search
 │   │   ├── my-tank.tsx    # Tank management
 │   │   └── profile.tsx    # User profile & settings
+│   ├── admin/             # Admin tools
+│   │   └── generate-images.tsx  # AI image generation
 │   ├── fish/[id].tsx      # Fish profile screen
+│   ├── compatibility-chart.tsx  # Fish compatibility matrix
 │   ├── auth/              # Authentication screens
 │   └── _layout.tsx        # Root layout
 ├── components/            # Reusable UI components
 ├── lib/
 │   ├── data/
 │   │   ├── fish-database.ts    # Fish species data
-│   │   └── plant-database.ts   # Plant species data
+│   │   ├── plant-database.ts   # Plant species data
+│   │   └── species-images.ts   # AI-generated image URLs
 │   ├── hooks/
 │   │   └── useImageUrl.ts        # Hook for getting image URLs
+│   ├── services/
+│   │   └── image-generation.ts   # OpenAI image generation
 │   ├── state/
 │   │   ├── tank-store.ts    # Zustand tank store
 │   │   └── auth-store.ts    # Zustand auth store
