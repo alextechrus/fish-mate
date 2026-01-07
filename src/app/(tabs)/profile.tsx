@@ -9,6 +9,7 @@ import {
   Alert,
   Image,
   ActivityIndicator,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -25,14 +26,27 @@ import {
   Trash2,
   CheckCircle,
   AlertTriangle,
+  Settings,
+  ChevronRight,
+  Droplets,
+  Thermometer,
+  Star,
+  Bug,
+  MessageSquare,
+  Shield,
+  FileText,
+  Info,
 } from 'lucide-react-native';
 import { useColorScheme } from '@/lib/useColorScheme';
 import { useAuthStore, SharedTank } from '@/lib/state/auth-store';
 import { useTankStore } from '@/lib/state/tank-store';
+import { useSettingsStore, VolumeUnit, TemperatureUnit } from '@/lib/state/settings-store';
 import { checkMultipleFishCompatibility } from '@/lib/utils/compatibility';
 import { getFishById } from '@/lib/data/fish-database';
 import { TankSetup } from '@/lib/types/fish';
 import { cn } from '@/lib/cn';
+
+const APP_VERSION = '1.0.0';
 
 const ShareTankModal = ({
   visible,
@@ -272,8 +286,110 @@ const SharedTankCard = ({
   );
 };
 
+// Settings Option Row Component
+const SettingsRow = ({
+  icon: Icon,
+  title,
+  subtitle,
+  onPress,
+  isDark,
+  iconColor = '#0EA5E9',
+  rightElement,
+  showChevron = true,
+}: {
+  icon: React.ElementType;
+  title: string;
+  subtitle?: string;
+  onPress?: () => void;
+  isDark: boolean;
+  iconColor?: string;
+  rightElement?: React.ReactNode;
+  showChevron?: boolean;
+}) => (
+  <Pressable
+    onPress={onPress}
+    className={cn(
+      'flex-row items-center py-4 px-4',
+      isDark ? 'active:bg-slate-700' : 'active:bg-slate-100'
+    )}
+  >
+    <View
+      className="w-10 h-10 rounded-xl items-center justify-center mr-3"
+      style={{ backgroundColor: `${iconColor}20` }}
+    >
+      <Icon size={20} color={iconColor} />
+    </View>
+    <View className="flex-1">
+      <Text
+        className={cn(
+          'text-base font-medium',
+          isDark ? 'text-white' : 'text-slate-900'
+        )}
+      >
+        {title}
+      </Text>
+      {subtitle && (
+        <Text
+          className={cn(
+            'text-xs',
+            isDark ? 'text-slate-400' : 'text-slate-500'
+          )}
+        >
+          {subtitle}
+        </Text>
+      )}
+    </View>
+    {rightElement}
+    {showChevron && !rightElement && (
+      <ChevronRight size={20} color={isDark ? '#64748B' : '#94A3B8'} />
+    )}
+  </Pressable>
+);
+
+// Toggle Button for settings
+const ToggleButton = ({
+  options,
+  selected,
+  onSelect,
+  isDark,
+}: {
+  options: { value: string; label: string }[];
+  selected: string;
+  onSelect: (value: string) => void;
+  isDark: boolean;
+}) => (
+  <View
+    className={cn(
+      'flex-row rounded-lg p-1',
+      isDark ? 'bg-slate-700' : 'bg-slate-200'
+    )}
+  >
+    {options.map((option) => (
+      <Pressable
+        key={option.value}
+        onPress={() => onSelect(option.value)}
+        className={cn(
+          'px-3 py-1.5 rounded-md',
+          selected === option.value && (isDark ? 'bg-slate-600' : 'bg-white')
+        )}
+      >
+        <Text
+          className={cn(
+            'text-sm font-medium',
+            selected === option.value
+              ? isDark ? 'text-white' : 'text-slate-900'
+              : isDark ? 'text-slate-400' : 'text-slate-500'
+          )}
+        >
+          {option.label}
+        </Text>
+      </Pressable>
+    ))}
+  </View>
+);
+
 // Inner component that uses stores - only rendered after hydration
-function ProfileContent({ isDark }: { isDark: boolean }) {
+function SettingsContent({ isDark }: { isDark: boolean }) {
   const router = useRouter();
 
   // Get auth state using individual selectors
@@ -287,6 +403,12 @@ function ProfileContent({ isDark }: { isDark: boolean }) {
 
   // Get tanks from tank store using selector
   const tanks = useTankStore((s) => s.tanks);
+
+  // Settings store
+  const volumeUnit = useSettingsStore((s) => s.volumeUnit);
+  const temperatureUnit = useSettingsStore((s) => s.temperatureUnit);
+  const setVolumeUnit = useSettingsStore((s) => s.setVolumeUnit);
+  const setTemperatureUnit = useSettingsStore((s) => s.setTemperatureUnit);
 
   const [shareModalVisible, setShareModalVisible] = useState(false);
   const [selectedTank, setSelectedTank] = useState<TankSetup | null>(null);
@@ -320,6 +442,31 @@ function ProfileContent({ isDark }: { isDark: boolean }) {
     setShareModalVisible(true);
   };
 
+  const handleRateApp = () => {
+    // This would normally open the app store
+    Alert.alert(
+      'Rate FishMate',
+      'Thank you for using FishMate! Rating will be available once the app is published to the App Store.',
+      [{ text: 'OK' }]
+    );
+  };
+
+  const handleReportBug = () => {
+    Linking.openURL('mailto:support@fishmate.app?subject=Bug Report - FishMate');
+  };
+
+  const handleSendFeedback = () => {
+    Linking.openURL('mailto:feedback@fishmate.app?subject=Feedback - FishMate');
+  };
+
+  const handlePrivacyPolicy = () => {
+    Linking.openURL('https://fishmate.app/privacy');
+  };
+
+  const handleTermsOfService = () => {
+    Linking.openURL('https://fishmate.app/terms');
+  };
+
   return (
     <View className={cn('flex-1', isDark ? 'bg-slate-900' : 'bg-slate-50')}>
       <SafeAreaView edges={['top']} className="flex-1">
@@ -340,14 +487,14 @@ function ProfileContent({ isDark }: { isDark: boolean }) {
             <View className="flex-row items-center justify-between mb-4">
               <View className="flex-row items-center">
                 <View className="bg-white/20 rounded-full p-2 mr-3">
-                  <User size={24} color="white" />
+                  <Settings size={24} color="white" />
                 </View>
-                <Text className="text-white text-2xl font-bold">Profile</Text>
+                <Text className="text-white text-2xl font-bold">Settings</Text>
               </View>
             </View>
           </LinearGradient>
 
-          {/* Profile Card */}
+          {/* Account Card */}
           <View className="px-5 -mt-16">
             <View
               className={cn(
@@ -502,6 +649,72 @@ function ProfileContent({ isDark }: { isDark: boolean }) {
             </View>
           </View>
 
+          {/* App Preferences Section */}
+          <View className="px-5 mt-6">
+            <Text
+              className={cn(
+                'text-lg font-bold mb-3',
+                isDark ? 'text-white' : 'text-slate-900'
+              )}
+            >
+              Preferences
+            </Text>
+
+            <View
+              className={cn(
+                'rounded-2xl overflow-hidden',
+                isDark ? 'bg-slate-800' : 'bg-white'
+              )}
+              style={{
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: isDark ? 0.3 : 0.1,
+                shadowRadius: 8,
+                elevation: 4,
+              }}
+            >
+              <SettingsRow
+                icon={Droplets}
+                title="Volume Unit"
+                subtitle={volumeUnit === 'litres' ? 'Using Litres' : 'Using Gallons'}
+                isDark={isDark}
+                iconColor="#3B82F6"
+                showChevron={false}
+                rightElement={
+                  <ToggleButton
+                    options={[
+                      { value: 'litres', label: 'L' },
+                      { value: 'gallons', label: 'Gal' },
+                    ]}
+                    selected={volumeUnit}
+                    onSelect={(v) => setVolumeUnit(v as VolumeUnit)}
+                    isDark={isDark}
+                  />
+                }
+              />
+              <View className={cn('h-px mx-4', isDark ? 'bg-slate-700' : 'bg-slate-100')} />
+              <SettingsRow
+                icon={Thermometer}
+                title="Temperature"
+                subtitle={temperatureUnit === 'celsius' ? 'Using Celsius' : 'Using Fahrenheit'}
+                isDark={isDark}
+                iconColor="#EF4444"
+                showChevron={false}
+                rightElement={
+                  <ToggleButton
+                    options={[
+                      { value: 'celsius', label: '°C' },
+                      { value: 'fahrenheit', label: '°F' },
+                    ]}
+                    selected={temperatureUnit}
+                    onSelect={(v) => setTemperatureUnit(v as TemperatureUnit)}
+                    isDark={isDark}
+                  />
+                }
+              />
+            </View>
+          </View>
+
           {/* Share Tanks Section */}
           {isAuthenticated && tanks.length > 0 && (
             <View className="px-5 mt-6">
@@ -603,6 +816,138 @@ function ProfileContent({ isDark }: { isDark: boolean }) {
             </View>
           )}
 
+          {/* Feedback & Support Section */}
+          <View className="px-5 mt-6">
+            <Text
+              className={cn(
+                'text-lg font-bold mb-3',
+                isDark ? 'text-white' : 'text-slate-900'
+              )}
+            >
+              Feedback & Support
+            </Text>
+
+            <View
+              className={cn(
+                'rounded-2xl overflow-hidden',
+                isDark ? 'bg-slate-800' : 'bg-white'
+              )}
+              style={{
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: isDark ? 0.3 : 0.1,
+                shadowRadius: 8,
+                elevation: 4,
+              }}
+            >
+              <SettingsRow
+                icon={Star}
+                title="Rate FishMate"
+                subtitle="Love the app? Leave a review!"
+                onPress={handleRateApp}
+                isDark={isDark}
+                iconColor="#F59E0B"
+              />
+              <View className={cn('h-px mx-4', isDark ? 'bg-slate-700' : 'bg-slate-100')} />
+              <SettingsRow
+                icon={Bug}
+                title="Report a Bug"
+                subtitle="Help us improve the app"
+                onPress={handleReportBug}
+                isDark={isDark}
+                iconColor="#EF4444"
+              />
+              <View className={cn('h-px mx-4', isDark ? 'bg-slate-700' : 'bg-slate-100')} />
+              <SettingsRow
+                icon={MessageSquare}
+                title="Send Feedback"
+                subtitle="Share your thoughts with us"
+                onPress={handleSendFeedback}
+                isDark={isDark}
+                iconColor="#10B981"
+              />
+            </View>
+          </View>
+
+          {/* Legal Section */}
+          <View className="px-5 mt-6">
+            <Text
+              className={cn(
+                'text-lg font-bold mb-3',
+                isDark ? 'text-white' : 'text-slate-900'
+              )}
+            >
+              Legal
+            </Text>
+
+            <View
+              className={cn(
+                'rounded-2xl overflow-hidden',
+                isDark ? 'bg-slate-800' : 'bg-white'
+              )}
+              style={{
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: isDark ? 0.3 : 0.1,
+                shadowRadius: 8,
+                elevation: 4,
+              }}
+            >
+              <SettingsRow
+                icon={Shield}
+                title="Privacy Policy"
+                onPress={handlePrivacyPolicy}
+                isDark={isDark}
+                iconColor="#8B5CF6"
+              />
+              <View className={cn('h-px mx-4', isDark ? 'bg-slate-700' : 'bg-slate-100')} />
+              <SettingsRow
+                icon={FileText}
+                title="Terms of Service"
+                onPress={handleTermsOfService}
+                isDark={isDark}
+                iconColor="#6366F1"
+              />
+            </View>
+          </View>
+
+          {/* Version Info */}
+          <View className="px-5 mt-6 mb-8">
+            <View
+              className={cn(
+                'rounded-2xl p-4 items-center',
+                isDark ? 'bg-slate-800' : 'bg-white'
+              )}
+              style={{
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: isDark ? 0.3 : 0.1,
+                shadowRadius: 8,
+                elevation: 4,
+              }}
+            >
+              <View className="flex-row items-center mb-1">
+                <Info size={16} color={isDark ? '#64748B' : '#94A3B8'} />
+                <Text
+                  className={cn(
+                    'text-sm font-medium ml-2',
+                    isDark ? 'text-slate-400' : 'text-slate-500'
+                  )}
+                >
+                  FishMate
+                </Text>
+              </View>
+              <Text
+                className={cn(
+                  'text-xs',
+                  isDark ? 'text-slate-500' : 'text-slate-400'
+                )}
+              >
+                Version {APP_VERSION}
+              </Text>
+            </View>
+          </View>
+
           <View className="h-8" />
         </ScrollView>
       </SafeAreaView>
@@ -621,7 +966,7 @@ function ProfileContent({ isDark }: { isDark: boolean }) {
 }
 
 // Wrapper component that handles hydration
-export default function ProfileScreen() {
+export default function SettingsScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
@@ -641,5 +986,5 @@ export default function ProfileScreen() {
     );
   }
 
-  return <ProfileContent isDark={isDark} />;
+  return <SettingsContent isDark={isDark} />;
 }

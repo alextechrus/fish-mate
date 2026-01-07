@@ -11,6 +11,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+  interpolate,
+} from 'react-native-reanimated';
 import {
   ChevronLeft,
   Thermometer,
@@ -29,8 +35,6 @@ import {
   Beaker,
   TrendingUp,
   ChevronDown,
-  ChevronUp,
-  Zap,
   Award,
 } from 'lucide-react-native';
 import { useColorScheme } from '@/lib/useColorScheme';
@@ -39,6 +43,7 @@ import { getFishById } from '@/lib/data/fish-database';
 import { Fish } from '@/lib/types/fish';
 import { cn } from '@/lib/cn';
 import { useTankStore } from '@/lib/state/tank-store';
+import { useSettingsStore, formatTemperatureRange } from '@/lib/state/settings-store';
 import { usePlantImage, useFishImage } from '@/lib/hooks/useImageUrl';
 import {
   getCompatibilityExplanation,
@@ -46,27 +51,58 @@ import {
   difficultyDefinitions,
 } from '@/lib/utils/plant-compatibility';
 
+// Growth rate explanations
+const growthRateExplanations: Record<string, { title: string; description: string; care: string }> = {
+  slow: {
+    title: 'Slow Growth',
+    description: 'This plant grows at a leisurely pace, typically adding only a few centimeters per month.',
+    care: 'Requires less frequent trimming and maintenance. Great for low-tech tanks as it doesn\'t demand high nutrients or CO2. May take several months to fill in an area.',
+  },
+  moderate: {
+    title: 'Moderate Growth',
+    description: 'This plant grows at a balanced pace, adding noticeable new growth each week.',
+    care: 'Needs regular but not excessive trimming. Benefits from balanced fertilization. Good choice for most aquariums as it fills in steadily without becoming overwhelming.',
+  },
+  fast: {
+    title: 'Fast Growth',
+    description: 'This plant grows rapidly, often adding several centimeters per week under good conditions.',
+    care: 'Requires frequent trimming to prevent overgrowth. High nutrient demands - needs regular fertilization. Excellent for outcompeting algae and quickly establishing a planted look.',
+  },
+};
+
+// Placement explanations
+const placementExplanations: Record<string, { title: string; description: string; tips: string }> = {
+  foreground: {
+    title: 'Foreground Placement',
+    description: 'These are short, carpet-like plants that stay under 5cm tall. They\'re placed at the front of your aquarium.',
+    tips: 'Plant in the front section of your tank where they won\'t block the view. Great for creating lush carpet effects. Typically need higher light as they\'re furthest from the light source.',
+  },
+  midground: {
+    title: 'Midground Placement',
+    description: 'Medium-height plants (5-20cm) that create visual transitions between front and back of the tank.',
+    tips: 'Place in the middle section of your aquarium. Use to add depth and dimension. Can be used around hardscape (rocks/wood) to soften edges.',
+  },
+  background: {
+    title: 'Background Placement',
+    description: 'Tall plants (20cm+) that create a backdrop and hide equipment like heaters and filters.',
+    tips: 'Plant at the rear of your tank. These grow tall and create a natural backdrop. Trim regularly to prevent them from blocking light to other plants.',
+  },
+  floating: {
+    title: 'Floating Placement',
+    description: 'These plants float freely on the water surface, with roots dangling below.',
+    tips: 'Simply place on the water surface - no planting needed. Provides shade for fish that prefer dimmer conditions. Can help reduce algae by competing for nutrients. May need thinning to prevent blocking too much light.',
+  },
+};
+
 // Info tooltips content
 const sectionInfo: Record<string, { title: string; content: string }> = {
   waterParameters: {
     title: 'Why Water Parameters Matter',
     content: 'Water parameters are critical for plant health. Temperature, pH, and hardness must match your plant\'s requirements. Incorrect parameters can cause melting, stunted growth, or death. Always cycle your tank and test water regularly.',
   },
-  lighting: {
-    title: 'Understanding PAR Lighting',
-    content: 'PAR (Photosynthetically Active Radiation) measures usable light for plants.\n\nLow Light: 15-30 PAR - Basic aquarium lights suffice.\n\nMedium Light: 30-50 PAR - Quality planted tank LED needed.\n\nHigh Light: 50-100+ PAR - Professional lighting required, usually with CO2.',
-  },
-  placement: {
-    title: 'Why Placement Matters',
-    content: 'Proper placement ensures all plants get adequate light and space. Foreground plants stay short, background plants grow tall. Floating plants provide shade. Consider growth rate and final size when planting.',
-  },
   fishCompatibility: {
     title: 'Why Fish Compatibility Matters',
     content: 'Some fish will eat, uproot, or damage plants. Herbivorous fish like goldfish and silver dollars destroy most plants. Cichlids dig and uproot. Choose fish that complement your planted tank goals.',
-  },
-  difficulty: {
-    title: 'Understanding Plant Difficulty',
-    content: 'Easy: Thrives with basic lighting, no CO2, minimal care.\n\nModerate: Needs decent light, benefits from CO2, stable conditions.\n\nDifficult: Requires high light, CO2 injection, and precise care routine.',
   },
 };
 
@@ -157,44 +193,94 @@ const SectionHeader = ({
   </View>
 );
 
-const StatCard = ({
+// Collapsible info row component
+const CollapsibleInfoRow = ({
   icon: Icon,
   title,
   value,
+  expandedContent,
+  isExpanded,
+  onToggle,
   isDark,
   iconColor,
+  isLast = false,
 }: {
   icon: React.ElementType;
   title: string;
   value: string;
+  expandedContent: React.ReactNode;
+  isExpanded: boolean;
+  onToggle: () => void;
   isDark: boolean;
   iconColor?: string;
-}) => (
-  <View
-    className={cn(
-      'flex-1 p-4 rounded-xl mr-3 last:mr-0',
-      isDark ? 'bg-slate-800' : 'bg-white'
-    )}
-  >
-    <Icon size={20} color={iconColor || (isDark ? '#94A3B8' : '#64748B')} />
-    <Text
+  isLast?: boolean;
+}) => {
+  const rotation = useSharedValue(isExpanded ? 1 : 0);
+
+  React.useEffect(() => {
+    rotation.value = withTiming(isExpanded ? 1 : 0, { duration: 200 });
+  }, [isExpanded, rotation]);
+
+  const chevronStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${interpolate(rotation.value, [0, 1], [0, 180])}deg` }],
+  }));
+
+  return (
+    <View
       className={cn(
-        'text-xs mt-2 mb-1',
-        isDark ? 'text-slate-400' : 'text-slate-500'
+        !isLast && 'border-b',
+        isDark ? 'border-slate-700' : 'border-slate-100'
       )}
     >
-      {title}
-    </Text>
-    <Text
-      className={cn(
-        'text-sm font-semibold',
-        isDark ? 'text-white' : 'text-slate-900'
+      <Pressable
+        onPress={onToggle}
+        className="flex-row items-center py-4"
+      >
+        <View
+          className="w-10 h-10 rounded-xl items-center justify-center mr-3"
+          style={{ backgroundColor: `${iconColor || '#64748B'}20` }}
+        >
+          <Icon size={20} color={iconColor || (isDark ? '#94A3B8' : '#64748B')} />
+        </View>
+        <View className="flex-1">
+          <Text
+            className={cn(
+              'text-xs',
+              isDark ? 'text-slate-400' : 'text-slate-500'
+            )}
+          >
+            {title}
+          </Text>
+          <Text
+            className={cn(
+              'text-base font-semibold',
+              isDark ? 'text-white' : 'text-slate-900'
+            )}
+          >
+            {value}
+          </Text>
+        </View>
+        <Animated.View style={chevronStyle}>
+          <ChevronDown size={20} color={isDark ? '#64748B' : '#94A3B8'} />
+        </Animated.View>
+      </Pressable>
+
+      {isExpanded && (
+        <View
+          className={cn(
+            'pb-4 px-2',
+            isDark ? 'bg-slate-800/50' : 'bg-slate-50'
+          )}
+          style={{ marginLeft: 52, marginRight: 8, borderRadius: 12, marginBottom: 8 }}
+        >
+          <View className="p-3">
+            {expandedContent}
+          </View>
+        </View>
       )}
-    >
-      {value}
-    </Text>
-  </View>
-);
+    </View>
+  );
+};
 
 // Separate component for fish image to handle hook properly
 const FishImageDisplay = ({ fishId }: { fishId: string }) => {
@@ -235,6 +321,16 @@ const FishCompatibilityItem = ({
   const StatusIcon = statusConfig.icon;
   const explanation = getCompatibilityExplanation(fish.id, status);
 
+  const rotation = useSharedValue(expanded ? 1 : 0);
+
+  React.useEffect(() => {
+    rotation.value = withTiming(expanded ? 1 : 0, { duration: 200 });
+  }, [expanded, rotation]);
+
+  const chevronStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${interpolate(rotation.value, [0, 1], [0, 180])}deg` }],
+  }));
+
   return (
     <View
       className={cn(
@@ -273,11 +369,9 @@ const FishCompatibilityItem = ({
           >
             {statusConfig.label}
           </Text>
-          {expanded ? (
-            <ChevronUp size={16} color={isDark ? '#94A3B8' : '#64748B'} />
-          ) : (
+          <Animated.View style={chevronStyle}>
             <ChevronDown size={16} color={isDark ? '#94A3B8' : '#64748B'} />
-          )}
+          </Animated.View>
         </View>
       </Pressable>
 
@@ -364,6 +458,7 @@ export default function PlantProfileScreen() {
   const isDark = colorScheme === 'dark';
   const addPlantToTank = useTankStore((s) => s.addPlantToTank);
   const tanks = useTankStore((s) => s.tanks);
+  const temperatureUnit = useSettingsStore((s) => s.temperatureUnit);
 
   const [infoModal, setInfoModal] = useState<{
     visible: boolean;
@@ -371,6 +466,7 @@ export default function PlantProfileScreen() {
   }>({ visible: false, info: null });
 
   const [expandedFishId, setExpandedFishId] = useState<string | null>(null);
+  const [expandedInfoSection, setExpandedInfoSection] = useState<string | null>(null);
 
   const plant = getPlantById(id || '');
 
@@ -414,6 +510,10 @@ export default function PlantProfileScreen() {
     Linking.openURL(`https://www.google.com/search?q=${query}`);
   };
 
+  const toggleInfoSection = (section: string) => {
+    setExpandedInfoSection(expandedInfoSection === section ? null : section);
+  };
+
   const avgPrice = (plant.price.min + plant.price.max) / 2;
 
   const difficultyColor = {
@@ -427,6 +527,19 @@ export default function PlantProfileScreen() {
     medium: '#F59E0B',
     high: '#EF4444',
   }[plant.lighting];
+
+  const growthColor = {
+    slow: '#3B82F6',
+    moderate: '#F59E0B',
+    fast: '#10B981',
+  }[plant.growthRate];
+
+  const placementColor = {
+    foreground: '#EC4899',
+    midground: '#8B5CF6',
+    background: '#06B6D4',
+    floating: '#10B981',
+  }[plant.placement];
 
   return (
     <View className={cn('flex-1', isDark ? 'bg-slate-900' : 'bg-slate-50')}>
@@ -510,17 +623,6 @@ export default function PlantProfileScreen() {
                   {plant.scientificName}
                 </Text>
               </View>
-              <View
-                className="px-3 py-1 rounded-full"
-                style={{ backgroundColor: `${difficultyColor}20` }}
-              >
-                <Text
-                  className="text-sm font-semibold capitalize"
-                  style={{ color: difficultyColor }}
-                >
-                  {plant.difficulty}
-                </Text>
-              </View>
             </View>
 
             <Text
@@ -533,116 +635,357 @@ export default function PlantProfileScreen() {
             </Text>
           </View>
 
-          {/* Quick Stats */}
-          <View className="flex-row mb-4">
-            <Pressable
-              className="flex-1 mr-3"
-              onPress={() => handleInfoPress('lighting')}
-            >
-              <View
-                className={cn(
-                  'p-4 rounded-xl',
-                  isDark ? 'bg-slate-800' : 'bg-white'
-                )}
-              >
-                <View className="flex-row items-center justify-between">
-                  <Sun size={20} color={lightingColor} />
-                  <Info size={14} color={isDark ? '#64748B' : '#94A3B8'} />
-                </View>
-                <Text
-                  className={cn(
-                    'text-xs mt-2 mb-1',
-                    isDark ? 'text-slate-400' : 'text-slate-500'
-                  )}
-                >
-                  Lighting
-                </Text>
-                <Text
-                  className={cn(
-                    'text-sm font-semibold',
-                    isDark ? 'text-white' : 'text-slate-900'
-                  )}
-                >
-                  {plant.lighting.charAt(0).toUpperCase() + plant.lighting.slice(1)}
-                </Text>
-                <Text
-                  className={cn(
-                    'text-xs mt-0.5',
-                    isDark ? 'text-slate-500' : 'text-slate-400'
-                  )}
-                >
-                  {lightingDefinitions[plant.lighting].parRange}
-                </Text>
-              </View>
-            </Pressable>
-            <StatCard
-              icon={Layers}
-              title="Placement"
-              value={plant.placement.charAt(0).toUpperCase() + plant.placement.slice(1)}
-              isDark={isDark}
-            />
-            <StatCard
-              icon={TrendingUp}
-              title="Growth"
-              value={plant.growthRate.charAt(0).toUpperCase() + plant.growthRate.slice(1)}
-              isDark={isDark}
-              iconColor="#10B981"
-            />
-          </View>
-
-          {/* Difficulty Explanation Card */}
-          <Pressable
-            onPress={() => handleInfoPress('difficulty')}
+          {/* Collapsible Plant Info Card */}
+          <View
             className={cn(
-              'rounded-2xl p-4 mb-4',
+              'rounded-2xl mb-4 overflow-hidden',
               isDark ? 'bg-slate-800' : 'bg-white'
             )}
+            style={{
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.08,
+              shadowRadius: 8,
+              elevation: 3,
+            }}
           >
-            <View className="flex-row items-center justify-between mb-2">
-              <View className="flex-row items-center">
-                <Award size={18} color={difficultyColor} />
-                <Text
-                  className={cn(
-                    'text-sm font-semibold ml-2',
-                    isDark ? 'text-white' : 'text-slate-900'
-                  )}
-                >
-                  {plant.difficulty.charAt(0).toUpperCase() + plant.difficulty.slice(1)} Difficulty
-                </Text>
-              </View>
-              <Info size={14} color={isDark ? '#64748B' : '#94A3B8'} />
+            <View className="px-4">
+              {/* Difficulty */}
+              <CollapsibleInfoRow
+                icon={Award}
+                title="Difficulty"
+                value={plant.difficulty.charAt(0).toUpperCase() + plant.difficulty.slice(1)}
+                iconColor={difficultyColor}
+                isExpanded={expandedInfoSection === 'difficulty'}
+                onToggle={() => toggleInfoSection('difficulty')}
+                isDark={isDark}
+                expandedContent={
+                  <View>
+                    <Text
+                      className={cn(
+                        'text-sm font-semibold mb-2',
+                        isDark ? 'text-white' : 'text-slate-900'
+                      )}
+                    >
+                      {plant.difficulty.charAt(0).toUpperCase() + plant.difficulty.slice(1)} Difficulty
+                    </Text>
+                    <Text
+                      className={cn(
+                        'text-xs leading-5 mb-3',
+                        isDark ? 'text-slate-300' : 'text-slate-600'
+                      )}
+                    >
+                      {difficultyDefinitions[plant.difficulty].description}
+                    </Text>
+                    <Text
+                      className={cn(
+                        'text-xs font-medium mb-1',
+                        isDark ? 'text-slate-400' : 'text-slate-500'
+                      )}
+                    >
+                      Requirements:
+                    </Text>
+                    {difficultyDefinitions[plant.difficulty].requirements.map((req, i) => (
+                      <Text
+                        key={i}
+                        className={cn(
+                          'text-xs leading-5 ml-2',
+                          isDark ? 'text-slate-300' : 'text-slate-600'
+                        )}
+                      >
+                        • {req}
+                      </Text>
+                    ))}
+                    <Text
+                      className={cn(
+                        'text-xs mt-2 italic',
+                        isDark ? 'text-slate-400' : 'text-slate-500'
+                      )}
+                    >
+                      {difficultyDefinitions[plant.difficulty].suitableFor}
+                    </Text>
+                  </View>
+                }
+              />
+
+              {/* Lighting */}
+              <CollapsibleInfoRow
+                icon={Sun}
+                title="Lighting"
+                value={`${plant.lighting.charAt(0).toUpperCase() + plant.lighting.slice(1)} (${lightingDefinitions[plant.lighting].parRange})`}
+                iconColor={lightingColor}
+                isExpanded={expandedInfoSection === 'lighting'}
+                onToggle={() => toggleInfoSection('lighting')}
+                isDark={isDark}
+                expandedContent={
+                  <View>
+                    <Text
+                      className={cn(
+                        'text-sm font-semibold mb-2',
+                        isDark ? 'text-white' : 'text-slate-900'
+                      )}
+                    >
+                      {plant.lighting.charAt(0).toUpperCase() + plant.lighting.slice(1)} Light
+                    </Text>
+                    <Text
+                      className={cn(
+                        'text-xs leading-5 mb-2',
+                        isDark ? 'text-slate-300' : 'text-slate-600'
+                      )}
+                    >
+                      {lightingDefinitions[plant.lighting].description}
+                    </Text>
+                    <View
+                      className={cn(
+                        'p-2 rounded-lg mt-1',
+                        isDark ? 'bg-slate-700' : 'bg-slate-100'
+                      )}
+                    >
+                      <Text
+                        className={cn(
+                          'text-xs font-medium',
+                          isDark ? 'text-slate-300' : 'text-slate-600'
+                        )}
+                      >
+                        PAR Range: {lightingDefinitions[plant.lighting].parRange}
+                      </Text>
+                    </View>
+                  </View>
+                }
+              />
+
+              {/* Growth */}
+              <CollapsibleInfoRow
+                icon={TrendingUp}
+                title="Growth Rate"
+                value={plant.growthRate.charAt(0).toUpperCase() + plant.growthRate.slice(1)}
+                iconColor={growthColor}
+                isExpanded={expandedInfoSection === 'growth'}
+                onToggle={() => toggleInfoSection('growth')}
+                isDark={isDark}
+                expandedContent={
+                  <View>
+                    <Text
+                      className={cn(
+                        'text-sm font-semibold mb-2',
+                        isDark ? 'text-white' : 'text-slate-900'
+                      )}
+                    >
+                      {growthRateExplanations[plant.growthRate].title}
+                    </Text>
+                    <Text
+                      className={cn(
+                        'text-xs leading-5 mb-2',
+                        isDark ? 'text-slate-300' : 'text-slate-600'
+                      )}
+                    >
+                      {growthRateExplanations[plant.growthRate].description}
+                    </Text>
+                    <Text
+                      className={cn(
+                        'text-xs font-medium mb-1',
+                        isDark ? 'text-slate-400' : 'text-slate-500'
+                      )}
+                    >
+                      What this means for you:
+                    </Text>
+                    <Text
+                      className={cn(
+                        'text-xs leading-5',
+                        isDark ? 'text-slate-300' : 'text-slate-600'
+                      )}
+                    >
+                      {growthRateExplanations[plant.growthRate].care}
+                    </Text>
+                  </View>
+                }
+              />
+
+              {/* Placement */}
+              <CollapsibleInfoRow
+                icon={Layers}
+                title="Placement"
+                value={plant.placement.charAt(0).toUpperCase() + plant.placement.slice(1)}
+                iconColor={placementColor}
+                isExpanded={expandedInfoSection === 'placement'}
+                onToggle={() => toggleInfoSection('placement')}
+                isDark={isDark}
+                isLast
+                expandedContent={
+                  <View>
+                    <Text
+                      className={cn(
+                        'text-sm font-semibold mb-2',
+                        isDark ? 'text-white' : 'text-slate-900'
+                      )}
+                    >
+                      {placementExplanations[plant.placement].title}
+                    </Text>
+                    <Text
+                      className={cn(
+                        'text-xs leading-5 mb-2',
+                        isDark ? 'text-slate-300' : 'text-slate-600'
+                      )}
+                    >
+                      {placementExplanations[plant.placement].description}
+                    </Text>
+                    <Text
+                      className={cn(
+                        'text-xs font-medium mb-1',
+                        isDark ? 'text-slate-400' : 'text-slate-500'
+                      )}
+                    >
+                      Placement Tips:
+                    </Text>
+                    <Text
+                      className={cn(
+                        'text-xs leading-5',
+                        isDark ? 'text-slate-300' : 'text-slate-600'
+                      )}
+                    >
+                      {placementExplanations[plant.placement].tips}
+                    </Text>
+                  </View>
+                }
+              />
             </View>
-            <Text
+          </View>
+
+          {/* Water Parameters */}
+          <View className="mb-4">
+            <SectionHeader
+              title="Water Parameters"
+              infoKey="waterParameters"
+              onInfoPress={handleInfoPress}
+              isDark={isDark}
+            />
+            <View
               className={cn(
-                'text-xs leading-5',
-                isDark ? 'text-slate-400' : 'text-slate-500'
+                'rounded-2xl p-4',
+                isDark ? 'bg-slate-800' : 'bg-white'
               )}
             >
-              {difficultyDefinitions[plant.difficulty].suitableFor}
-            </Text>
-            <View className="flex-row flex-wrap mt-2">
-              {difficultyDefinitions[plant.difficulty].requirements.slice(0, 3).map((req, index) => (
-                <View
-                  key={index}
-                  className={cn(
-                    'px-2 py-1 rounded-full mr-1 mb-1',
-                    isDark ? 'bg-slate-700' : 'bg-slate-100'
-                  )}
-                >
+              <View className="flex-row mb-3">
+                <View className="flex-1 flex-row items-center">
+                  <Thermometer size={16} color="#EF4444" />
+                  <View className="ml-2">
+                    <Text
+                      className={cn(
+                        'text-xs',
+                        isDark ? 'text-slate-400' : 'text-slate-500'
+                      )}
+                    >
+                      Temperature
+                    </Text>
+                    <Text
+                      className={cn(
+                        'text-sm font-semibold',
+                        isDark ? 'text-white' : 'text-slate-900'
+                      )}
+                    >
+                      {formatTemperatureRange(
+                        plant.waterParameters.temperatureMin,
+                        plant.waterParameters.temperatureMax,
+                        temperatureUnit
+                      )}
+                    </Text>
+                  </View>
+                </View>
+                <View className="flex-1 flex-row items-center">
+                  <Beaker size={16} color="#8B5CF6" />
+                  <View className="ml-2">
+                    <Text
+                      className={cn(
+                        'text-xs',
+                        isDark ? 'text-slate-400' : 'text-slate-500'
+                      )}
+                    >
+                      pH Level
+                    </Text>
+                    <Text
+                      className={cn(
+                        'text-sm font-semibold',
+                        isDark ? 'text-white' : 'text-slate-900'
+                      )}
+                    >
+                      {plant.waterParameters.phMin}-{plant.waterParameters.phMax}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+              <View className="flex-row items-center">
+                <Droplets size={16} color="#3B82F6" />
+                <View className="ml-2">
                   <Text
                     className={cn(
                       'text-xs',
+                      isDark ? 'text-slate-400' : 'text-slate-500'
+                    )}
+                  >
+                    Hardness (dGH)
+                  </Text>
+                  <Text
+                    className={cn(
+                      'text-sm font-semibold',
+                      isDark ? 'text-white' : 'text-slate-900'
+                    )}
+                  >
+                    {plant.waterParameters.hardnessMin}-{plant.waterParameters.hardnessMax}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </View>
+
+          {/* Requirements */}
+          <View className="mb-4">
+            <SectionHeader title="Requirements" isDark={isDark} />
+            <View
+              className={cn(
+                'rounded-2xl p-4',
+                isDark ? 'bg-slate-800' : 'bg-white'
+              )}
+            >
+              <View className="flex-row flex-wrap">
+                <View className="flex-row items-center mr-4 mb-2">
+                  <View
+                    className={cn(
+                      'w-8 h-8 rounded-full items-center justify-center',
+                      plant.co2Required ? 'bg-amber-500/20' : 'bg-emerald-500/20'
+                    )}
+                  >
+                    <Beaker size={16} color={plant.co2Required ? '#F59E0B' : '#10B981'} />
+                  </View>
+                  <Text
+                    className={cn(
+                      'text-sm ml-2',
                       isDark ? 'text-slate-300' : 'text-slate-600'
                     )}
                   >
-                    {req}
+                    {plant.co2Required ? 'CO2 Required' : 'No CO2 Needed'}
                   </Text>
                 </View>
-              ))}
+                <View className="flex-row items-center mr-4 mb-2">
+                  <View
+                    className="w-8 h-8 rounded-full items-center justify-center"
+                    style={{ backgroundColor: `${lightingColor}20` }}
+                  >
+                    <Sun size={16} color={lightingColor} />
+                  </View>
+                  <Text
+                    className={cn(
+                      'text-sm ml-2 capitalize',
+                      isDark ? 'text-slate-300' : 'text-slate-600'
+                    )}
+                  >
+                    {plant.lighting} Light
+                  </Text>
+                </View>
+              </View>
             </View>
-          </Pressable>
+          </View>
 
-          {/* Price & Find Store */}
+          {/* Price & Find Store - Moved below Requirements */}
           <View
             className={cn(
               'rounded-2xl p-5 mb-4',
@@ -699,141 +1042,6 @@ export default function PlantProfileScreen() {
               <Text className="text-white font-semibold ml-2">Find Local Store</Text>
               <ExternalLink size={14} color="white" className="ml-2" />
             </Pressable>
-          </View>
-
-          {/* Water Parameters */}
-          <View className="mb-4">
-            <SectionHeader
-              title="Water Parameters"
-              infoKey="waterParameters"
-              onInfoPress={handleInfoPress}
-              isDark={isDark}
-            />
-            <View
-              className={cn(
-                'rounded-2xl p-4',
-                isDark ? 'bg-slate-800' : 'bg-white'
-              )}
-            >
-              <View className="flex-row mb-3">
-                <View className="flex-1 flex-row items-center">
-                  <Thermometer size={16} color="#EF4444" />
-                  <View className="ml-2">
-                    <Text
-                      className={cn(
-                        'text-xs',
-                        isDark ? 'text-slate-400' : 'text-slate-500'
-                      )}
-                    >
-                      Temperature
-                    </Text>
-                    <Text
-                      className={cn(
-                        'text-sm font-semibold',
-                        isDark ? 'text-white' : 'text-slate-900'
-                      )}
-                    >
-                      {plant.waterParameters.temperatureMin}°-{plant.waterParameters.temperatureMax}°F
-                    </Text>
-                  </View>
-                </View>
-                <View className="flex-1 flex-row items-center">
-                  <Beaker size={16} color="#8B5CF6" />
-                  <View className="ml-2">
-                    <Text
-                      className={cn(
-                        'text-xs',
-                        isDark ? 'text-slate-400' : 'text-slate-500'
-                      )}
-                    >
-                      pH Level
-                    </Text>
-                    <Text
-                      className={cn(
-                        'text-sm font-semibold',
-                        isDark ? 'text-white' : 'text-slate-900'
-                      )}
-                    >
-                      {plant.waterParameters.phMin}-{plant.waterParameters.phMax}
-                    </Text>
-                  </View>
-                </View>
-              </View>
-              <View className="flex-row items-center">
-                <Droplets size={16} color="#3B82F6" />
-                <View className="ml-2">
-                  <Text
-                    className={cn(
-                      'text-xs',
-                      isDark ? 'text-slate-400' : 'text-slate-500'
-                    )}
-                  >
-                    Hardness (dGH)
-                  </Text>
-                  <Text
-                    className={cn(
-                      'text-sm font-semibold',
-                      isDark ? 'text-white' : 'text-slate-900'
-                    )}
-                  >
-                    {plant.waterParameters.hardnessMin}-{plant.waterParameters.hardnessMax}
-                  </Text>
-                </View>
-              </View>
-            </View>
-          </View>
-
-          {/* Requirements */}
-          <View className="mb-4">
-            <SectionHeader
-              title="Requirements"
-              infoKey="lighting"
-              onInfoPress={handleInfoPress}
-              isDark={isDark}
-            />
-            <View
-              className={cn(
-                'rounded-2xl p-4',
-                isDark ? 'bg-slate-800' : 'bg-white'
-              )}
-            >
-              <View className="flex-row flex-wrap">
-                <View className="flex-row items-center mr-4 mb-2">
-                  <View
-                    className={cn(
-                      'w-8 h-8 rounded-full items-center justify-center',
-                      plant.co2Required ? 'bg-amber-500/20' : 'bg-emerald-500/20'
-                    )}
-                  >
-                    <Beaker size={16} color={plant.co2Required ? '#F59E0B' : '#10B981'} />
-                  </View>
-                  <Text
-                    className={cn(
-                      'text-sm ml-2',
-                      isDark ? 'text-slate-300' : 'text-slate-600'
-                    )}
-                  >
-                    {plant.co2Required ? 'CO2 Required' : 'No CO2 Needed'}
-                  </Text>
-                </View>
-                <View className="flex-row items-center mr-4 mb-2">
-                  <View
-                    className="w-8 h-8 rounded-full items-center justify-center"
-                    style={{ backgroundColor: `${lightingColor}20` }}
-                  >
-                    <Sun size={16} color={lightingColor} />
-                  </View>
-                  <Text
-                    className={cn(
-                      'text-sm ml-2 capitalize',
-                      isDark ? 'text-slate-300' : 'text-slate-600'
-                    )}
-                  >
-                    {plant.lighting} Light
-                  </Text>
-                </View>
-              </View>
-            </View>
           </View>
 
           {/* Care Notes */}

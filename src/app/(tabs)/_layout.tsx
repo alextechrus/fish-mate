@@ -1,6 +1,6 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { Home, Search, Anchor, User } from 'lucide-react-native';
+import { Home, Search, Anchor, Settings } from 'lucide-react-native';
 import { useColorScheme } from '@/lib/useColorScheme';
 
 export default function TabLayout() {
@@ -52,8 +52,8 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
-          tabBarIcon: ({ color, size }) => <User size={size} color={color} />,
+          title: 'Settings',
+          tabBarIcon: ({ color, size }) => <Settings size={size} color={color} />,
         }}
       />
       {/* Hide old screens but keep them as routes within tabs */}

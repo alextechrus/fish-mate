@@ -40,23 +40,19 @@ Each fish has a dedicated profile page with:
 ### Plant Profiles
 Each plant has a dedicated profile page with:
 - Common name and scientific name
-- Difficulty level with **detailed explanations** (easy/moderate/difficult)
-  - Shows what each difficulty level means
-  - Lists requirements for each difficulty
-  - Shows who each level is suitable for
-- Lighting requirements with **PAR values**:
-  - Low: 15-30 PAR
-  - Medium: 30-50 PAR
-  - High: 50-100+ PAR
+- **Collapsible info card** with expandable sections for:
+  - **Difficulty** - Tap to see what each level means, requirements, and who it's suitable for
+  - **Lighting** - Tap to see PAR values and lighting descriptions
+  - **Growth Rate** - Tap to see what slow/moderate/fast growth means for maintenance
+  - **Placement** - Tap to learn about foreground/midground/background/floating positions
 - CO2 requirements
-- Growth rate and placement
 - Water parameters (temperature, pH, hardness)
 - Care notes
 - **Detailed fish compatibility explanations**:
   - Tap any fish to expand and see WHY it's compatible or incompatible
   - Explains behaviors like digging, eating plants, or being plant-safe
   - Navigate to fish profile with one tap
-- Price range in GBP (£)
+- Price range in GBP (£) - displayed below requirements
 - Find stores near me feature
 
 ### Aquarium Plants Database
@@ -83,10 +79,21 @@ Each plant has a dedicated profile page with:
 - Quick access to fish and plant profiles
 - Tank cost breakdown in GBP (£)
 
-### Profile & Settings
-- User authentication (local)
+### Settings
+- User authentication (sign in/sign out)
+- **Preferences**:
+  - Volume unit toggle (Litres or Gallons)
+  - Temperature unit toggle (Celsius or Fahrenheit)
 - Tank sharing with other users
 - Access shared tanks from other users
+- **Feedback & Support**:
+  - Rate the app in App Store
+  - Report a bug via email
+  - Send feedback via email
+- **Legal**:
+  - Privacy Policy
+  - Terms of Service
+- App version info
 
 ## Tech Stack
 
