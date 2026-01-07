@@ -20,7 +20,6 @@ A cross-platform mobile app that helps aquarium hobbyists determine fish and pla
 - Browse aquarium plants with difficulty, lighting, and **placement filters** (foreground/midground/background/floating)
 - Tap sparkle icon on any fish to check compatibility with other fish
 - **Scrollable fish selection** - tap fish directly without typing to check compatibility
-- AI-generated unique images for each species
 - Prices displayed in GBP (£)
 - **Keyboard handling** - keyboard dismisses on scroll or when tapping outside
 
@@ -88,14 +87,6 @@ Each plant has a dedicated profile page with:
 - User authentication (local)
 - Tank sharing with other users
 - Access shared tanks from other users
-- AI Image Generation feature using Ideogram 3
-
-### AI-Generated Images
-- Unique photorealistic images for each fish and plant species
-- Images are automatically generated on-demand using Ideogram 3.0 API
-- Generated images are cached locally for fast loading
-- Falls back to stock images if generation fails
-- Can manually regenerate images from Profile > Generate Images
 
 ## Tech Stack
 
@@ -106,7 +97,6 @@ Each plant has a dedicated profile page with:
 - React Query for async operations
 - expo-linear-gradient for visual effects
 - lucide-react-native for icons
-- expo-file-system for local image storage
 
 ## Project Structure
 
@@ -120,17 +110,13 @@ src/
 │   │   └── profile.tsx    # User profile & settings
 │   ├── fish/[id].tsx      # Fish profile screen
 │   ├── auth/              # Authentication screens
-│   ├── generate-images.tsx # AI image generation
 │   └── _layout.tsx        # Root layout
 ├── components/            # Reusable UI components
 ├── lib/
 │   ├── data/
 │   │   ├── fish-database.ts    # Fish species data
 │   │   └── plant-database.ts   # Plant species data
-│   ├── services/
-│   │   └── image-generator.ts  # AI image generation service
 │   ├── hooks/
-│   │   ├── useGeneratedImages.ts # Hook for managing generated images
 │   │   └── useImageUrl.ts        # Hook for getting image URLs
 │   ├── state/
 │   │   ├── tank-store.ts    # Zustand tank store
@@ -168,18 +154,6 @@ src/
 - Size-based compatibility rules
 - Explicit compatibility lists from database
 
-## AI Integration
-
-The app uses Nano Banana Pro API (Gemini) for:
-- Generating unique, realistic images for each fish and plant
-- Images are stored locally for offline use
-
-To generate images:
-1. Go to Profile tab
-2. Tap "Generate AI Images" in Settings
-3. Choose to generate fish images, plant images, or both
-4. Wait for generation to complete (each image takes ~30 seconds)
-
 ## Getting Started
 
 1. The app runs automatically on port 8081
@@ -187,7 +161,6 @@ To generate images:
 3. Create your first tank in the "My Tank" tab
 4. Browse fish and plants in the "Search" tab
 5. Use the Compatibility Checker to plan your aquarium
-6. Optionally generate AI images for enhanced visuals
 
 ## Fish Database
 

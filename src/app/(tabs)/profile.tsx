@@ -25,8 +25,6 @@ import {
   Trash2,
   CheckCircle,
   AlertTriangle,
-  Sparkles,
-  Settings,
 } from 'lucide-react-native';
 import { useColorScheme } from '@/lib/useColorScheme';
 import { useAuthStore, SharedTank } from '@/lib/state/auth-store';
@@ -604,56 +602,6 @@ function ProfileContent({ isDark }: { isDark: boolean }) {
               ))}
             </View>
           )}
-
-          {/* Settings Section */}
-          <View className="px-5 mt-6">
-            <Text
-              className={cn(
-                'text-lg font-bold mb-3',
-                isDark ? 'text-white' : 'text-slate-900'
-              )}
-            >
-              Settings
-            </Text>
-
-            <Pressable
-              onPress={() => router.push('/generate-images')}
-              className={cn(
-                'flex-row items-center p-4 rounded-xl mb-3',
-                isDark ? 'bg-slate-800' : 'bg-white'
-              )}
-              style={{
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: isDark ? 0.3 : 0.1,
-                shadowRadius: 8,
-                elevation: 4,
-              }}
-            >
-              <View className="w-12 h-12 rounded-xl items-center justify-center mr-3 bg-violet-500/20">
-                <Sparkles size={24} color="#8B5CF6" />
-              </View>
-              <View className="flex-1">
-                <Text
-                  className={cn(
-                    'text-base font-semibold',
-                    isDark ? 'text-white' : 'text-slate-900'
-                  )}
-                >
-                  Generate AI Images
-                </Text>
-                <Text
-                  className={cn(
-                    'text-xs',
-                    isDark ? 'text-slate-400' : 'text-slate-500'
-                  )}
-                >
-                  Create unique images for fish & plants
-                </Text>
-              </View>
-              <Settings size={20} color={isDark ? '#64748B' : '#94A3B8'} />
-            </Pressable>
-          </View>
 
           <View className="h-8" />
         </ScrollView>
