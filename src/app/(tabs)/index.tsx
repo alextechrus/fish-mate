@@ -271,7 +271,7 @@ const TipsCarousel = ({ isDark }: { isDark: boolean }) => {
   };
 
   return (
-    <View className="px-5 mb-8">
+    <View className="px-5 mb-6">
       <View className="flex-row items-center mb-3">
         <Lightbulb size={18} color={isDark ? '#F59E0B' : '#D97706'} />
         <Text
@@ -526,7 +526,7 @@ export default function HomeScreen() {
           {/* Tips Carousel */}
           <TipsCarousel isDark={isDark} />
 
-          <View className="h-4" />
+          <View className="h-8" />
         </ScrollView>
       </SafeAreaView>
     </View>
