@@ -11,6 +11,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+  interpolate,
+} from 'react-native-reanimated';
 import {
   ChevronLeft,
   Thermometer,
@@ -27,18 +33,43 @@ import {
   Plus,
   Info,
   X,
-  DollarSign,
   PoundSterling,
   MapPin,
   ExternalLink,
   Beaker,
+  ChevronDown,
 } from 'lucide-react-native';
 import { useColorScheme } from '@/lib/useColorScheme';
 import { getFishById, fishDatabase } from '@/lib/data/fish-database';
-import { Fish } from '@/lib/types/fish';
+import { Fish, TankZone } from '@/lib/types/fish';
 import { cn } from '@/lib/cn';
 import { useTankStore } from '@/lib/state/tank-store';
 import { useFishImage } from '@/lib/hooks/useImageUrl';
+import { useSettingsStore, formatTemperatureRange, formatVolume } from '@/lib/state/settings-store';
+
+// Tank zone explanations
+const tankZoneExplanations: Record<TankZone, { title: string; description: string; tips: string }> = {
+  top: {
+    title: 'Top Dwelling Fish',
+    description: 'This fish naturally inhabits the upper region of the aquarium, near the water surface.',
+    tips: 'Ensure adequate surface area for oxygen exchange. These fish often prefer floating plants for cover. Keep water currents gentle at the surface.',
+  },
+  middle: {
+    title: 'Mid-Level Fish',
+    description: 'This fish prefers the middle portion of the water column, swimming between the surface and substrate.',
+    tips: 'Provide open swimming space in the middle of your tank. Tall plants and decorations on the sides give them places to explore and hide.',
+  },
+  bottom: {
+    title: 'Bottom Dwelling Fish',
+    description: 'This fish spends most of its time near or on the substrate, often scavenging for food.',
+    tips: 'Use soft, smooth substrate to protect delicate barbels and bellies. Provide caves, driftwood, and plants for hiding spots. Feed sinking pellets to ensure they get food.',
+  },
+  all: {
+    title: 'All Levels',
+    description: 'This versatile fish moves freely throughout all levels of the aquarium.',
+    tips: 'These adaptable fish make great community tank members. Ensure ample swimming space at all levels and varied decoration throughout the tank.',
+  },
+};
 
 // Fish image component that uses generated images
 const FishImageDisplay = ({ fish, className, style }: { fish: Fish; className?: string; style?: object }) => {
@@ -206,6 +237,139 @@ const InfoCard = ({
   </View>
 );
 
+// Dynamic Zone Icon - highlights the relevant zone layer
+const ZoneIcon = ({ zone, size = 24, color = '#64748B' }: { zone: TankZone; size?: number; color?: string }) => {
+  const layerHeight = size / 4;
+  const activeColor = color;
+  const inactiveColor = `${color}40`;
+
+  return (
+    <View style={{ width: size, height: size, justifyContent: 'center', alignItems: 'center' }}>
+      {/* Top layer */}
+      <View
+        style={{
+          width: size * 0.8,
+          height: layerHeight,
+          backgroundColor: zone === 'top' || zone === 'all' ? activeColor : inactiveColor,
+          borderTopLeftRadius: 4,
+          borderTopRightRadius: 4,
+          marginBottom: 2,
+        }}
+      />
+      {/* Middle layer */}
+      <View
+        style={{
+          width: size * 0.8,
+          height: zone === 'middle' ? layerHeight * 1.5 : layerHeight,
+          backgroundColor: zone === 'middle' || zone === 'all' ? activeColor : inactiveColor,
+          marginBottom: 2,
+        }}
+      />
+      {/* Bottom layer */}
+      <View
+        style={{
+          width: size * 0.8,
+          height: layerHeight,
+          backgroundColor: zone === 'bottom' || zone === 'all' ? activeColor : inactiveColor,
+          borderBottomLeftRadius: 4,
+          borderBottomRightRadius: 4,
+        }}
+      />
+    </View>
+  );
+};
+
+// Collapsible info row component
+const CollapsibleInfoRow = ({
+  icon: Icon,
+  customIcon,
+  title,
+  value,
+  expandedContent,
+  isExpanded,
+  onToggle,
+  isDark,
+  iconColor,
+  isLast = false,
+}: {
+  icon?: React.ElementType;
+  customIcon?: React.ReactNode;
+  title: string;
+  value: string;
+  expandedContent: React.ReactNode;
+  isExpanded: boolean;
+  onToggle: () => void;
+  isDark: boolean;
+  iconColor?: string;
+  isLast?: boolean;
+}) => {
+  const rotation = useSharedValue(isExpanded ? 1 : 0);
+
+  React.useEffect(() => {
+    rotation.value = withTiming(isExpanded ? 1 : 0, { duration: 200 });
+  }, [isExpanded, rotation]);
+
+  const chevronStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${interpolate(rotation.value, [0, 1], [0, 180])}deg` }],
+  }));
+
+  return (
+    <View
+      className={cn(
+        !isLast && 'border-b',
+        isDark ? 'border-slate-700' : 'border-slate-100'
+      )}
+    >
+      <Pressable
+        onPress={onToggle}
+        className="flex-row items-center py-4"
+      >
+        <View
+          className="w-10 h-10 rounded-xl items-center justify-center mr-3"
+          style={{ backgroundColor: `${iconColor || '#64748B'}20` }}
+        >
+          {customIcon ? customIcon : Icon && <Icon size={20} color={iconColor || (isDark ? '#94A3B8' : '#64748B')} />}
+        </View>
+        <View className="flex-1">
+          <Text
+            className={cn(
+              'text-xs',
+              isDark ? 'text-slate-400' : 'text-slate-500'
+            )}
+          >
+            {title}
+          </Text>
+          <Text
+            className={cn(
+              'text-base font-semibold',
+              isDark ? 'text-white' : 'text-slate-900'
+            )}
+          >
+            {value}
+          </Text>
+        </View>
+        <Animated.View style={chevronStyle}>
+          <ChevronDown size={20} color={isDark ? '#64748B' : '#94A3B8'} />
+        </Animated.View>
+      </Pressable>
+
+      {isExpanded && (
+        <View
+          className={cn(
+            'pb-4 px-2',
+            isDark ? 'bg-slate-800/50' : 'bg-slate-50'
+          )}
+          style={{ marginLeft: 52, marginRight: 8, borderRadius: 12, marginBottom: 8 }}
+        >
+          <View className="p-3">
+            {expandedContent}
+          </View>
+        </View>
+      )}
+    </View>
+  );
+};
+
 const CompatibilityItem = ({
   fish,
   status,
@@ -272,10 +436,13 @@ export default function FishProfileScreen() {
   const isDark = colorScheme === 'dark';
 
   const [infoModal, setInfoModal] = useState<string | null>(null);
+  const [expandedInfoSection, setExpandedInfoSection] = useState<string | null>(null);
 
   const tanks = useTankStore((s) => s.tanks);
   const addFishToTank = useTankStore((s) => s.addFishToTank);
   const activeTankId = useTankStore((s) => s.activeTankId);
+  const temperatureUnit = useSettingsStore((s) => s.temperatureUnit);
+  const volumeUnit = useSettingsStore((s) => s.volumeUnit);
 
   const fish = getFishById(id || '');
 
@@ -482,93 +649,131 @@ export default function FishProfileScreen() {
             </Text>
           </View>
 
+          {/* Collapsible Fish Info Card */}
           <View
             className={cn(
-              'rounded-2xl p-4 mb-6',
+              'rounded-2xl mb-6 overflow-hidden',
               isDark ? 'bg-slate-800' : 'bg-white'
             )}
+            style={{
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.08,
+              shadowRadius: 8,
+              elevation: 3,
+            }}
           >
-            <SectionHeader
-              icon={PoundSterling}
-              title="Pricing"
-              isDark={isDark}
-              iconColor="#10B981"
-            />
+            <View className="px-4">
+              {/* Max Size */}
+              <CollapsibleInfoRow
+                icon={Ruler}
+                title="Max Size"
+                value={`${fish.maxSize} inches`}
+                iconColor="#3B82F6"
+                isExpanded={expandedInfoSection === 'maxSize'}
+                onToggle={() => setExpandedInfoSection(expandedInfoSection === 'maxSize' ? null : 'maxSize')}
+                isDark={isDark}
+                expandedContent={
+                  <View>
+                    <Text
+                      className={cn(
+                        'text-sm font-semibold mb-2',
+                        isDark ? 'text-white' : 'text-slate-900'
+                      )}
+                    >
+                      Adult Size: {fish.maxSize} inches
+                    </Text>
+                    <Text
+                      className={cn(
+                        'text-xs leading-5',
+                        isDark ? 'text-slate-300' : 'text-slate-600'
+                      )}
+                    >
+                      This is the typical maximum size this fish reaches when fully grown in a healthy aquarium environment. Actual size may vary based on diet, water quality, and tank conditions. Plan your tank size accordingly to accommodate adult fish.
+                    </Text>
+                  </View>
+                }
+              />
 
-            <View className="flex-row justify-between items-center mb-3">
-              <Text
-                className={cn(
-                  'text-sm',
-                  isDark ? 'text-slate-400' : 'text-slate-500'
-                )}
-              >
-                Price Range
-              </Text>
-              <Text
-                className={cn(
-                  'text-lg font-bold',
-                  isDark ? 'text-white' : 'text-slate-900'
-                )}
-              >
-                £{fish.price.min} - £{fish.price.max}
-              </Text>
+              {/* Min Tank */}
+              <CollapsibleInfoRow
+                icon={Home}
+                title="Minimum Tank Size"
+                value={formatVolume(fish.minTankSize, volumeUnit)}
+                iconColor="#8B5CF6"
+                isExpanded={expandedInfoSection === 'minTank'}
+                onToggle={() => setExpandedInfoSection(expandedInfoSection === 'minTank' ? null : 'minTank')}
+                isDark={isDark}
+                expandedContent={
+                  <View>
+                    <Text
+                      className={cn(
+                        'text-sm font-semibold mb-2',
+                        isDark ? 'text-white' : 'text-slate-900'
+                      )}
+                    >
+                      Minimum: {formatVolume(fish.minTankSize, volumeUnit)}
+                    </Text>
+                    <Text
+                      className={cn(
+                        'text-xs leading-5',
+                        isDark ? 'text-slate-300' : 'text-slate-600'
+                      )}
+                    >
+                      This is the minimum recommended tank size for a single fish or small group. Larger tanks are always better as they provide more stable water conditions and swimming space. For schooling fish, consider going larger to accommodate the group comfortably.
+                    </Text>
+                  </View>
+                }
+              />
+
+              {/* Zone */}
+              <CollapsibleInfoRow
+                customIcon={<ZoneIcon zone={fish.tankZone} size={20} color="#10B981" />}
+                title="Tank Zone"
+                value={fish.tankZone.charAt(0).toUpperCase() + fish.tankZone.slice(1)}
+                iconColor="#10B981"
+                isExpanded={expandedInfoSection === 'zone'}
+                onToggle={() => setExpandedInfoSection(expandedInfoSection === 'zone' ? null : 'zone')}
+                isDark={isDark}
+                isLast
+                expandedContent={
+                  <View>
+                    <Text
+                      className={cn(
+                        'text-sm font-semibold mb-2',
+                        isDark ? 'text-white' : 'text-slate-900'
+                      )}
+                    >
+                      {tankZoneExplanations[fish.tankZone].title}
+                    </Text>
+                    <Text
+                      className={cn(
+                        'text-xs leading-5 mb-2',
+                        isDark ? 'text-slate-300' : 'text-slate-600'
+                      )}
+                    >
+                      {tankZoneExplanations[fish.tankZone].description}
+                    </Text>
+                    <Text
+                      className={cn(
+                        'text-xs font-medium mb-1',
+                        isDark ? 'text-slate-400' : 'text-slate-500'
+                      )}
+                    >
+                      Tips:
+                    </Text>
+                    <Text
+                      className={cn(
+                        'text-xs leading-5',
+                        isDark ? 'text-slate-300' : 'text-slate-600'
+                      )}
+                    >
+                      {tankZoneExplanations[fish.tankZone].tips}
+                    </Text>
+                  </View>
+                }
+              />
             </View>
-
-            <View className="flex-row justify-between items-center mb-4">
-              <Text
-                className={cn(
-                  'text-sm',
-                  isDark ? 'text-slate-400' : 'text-slate-500'
-                )}
-              >
-                Average Price
-              </Text>
-              <Text className="text-lg font-bold text-emerald-500">
-                ~£{avgPrice.toFixed(0)}
-              </Text>
-            </View>
-
-            <Pressable
-              onPress={handleFindStore}
-              className="flex-row items-center justify-center py-3 rounded-xl bg-sky-500"
-            >
-              <MapPin size={18} color="white" />
-              <Text className="text-white font-semibold ml-2">
-                Find Stores Near Me
-              </Text>
-              <ExternalLink size={14} color="white" className="ml-1" />
-            </Pressable>
-
-            <Text
-              className={cn(
-                'text-xs text-center mt-2',
-                isDark ? 'text-slate-500' : 'text-slate-400'
-              )}
-            >
-              Prices updated weekly. Actual prices may vary by location.
-            </Text>
-          </View>
-
-          {/* Quick Stats */}
-          <View className="flex-row mb-6">
-            <InfoCard
-              icon={Ruler}
-              title="Max Size"
-              value={`${fish.maxSize}"`}
-              isDark={isDark}
-            />
-            <InfoCard
-              icon={Home}
-              title="Min Tank"
-              value={`${fish.minTankSize}g`}
-              isDark={isDark}
-            />
-            <InfoCard
-              icon={Layers}
-              title="Zone"
-              value={fish.tankZone.charAt(0).toUpperCase() + fish.tankZone.slice(1)}
-              isDark={isDark}
-            />
           </View>
 
           {/* Water Parameters */}
@@ -606,8 +811,11 @@ export default function FishProfileScreen() {
                     isDark ? 'text-white' : 'text-slate-900'
                   )}
                 >
-                  {fish.waterParameters.temperatureMin}°F -{' '}
-                  {fish.waterParameters.temperatureMax}°F
+                  {formatTemperatureRange(
+                    fish.waterParameters.temperatureMin,
+                    fish.waterParameters.temperatureMax,
+                    temperatureUnit
+                  )}
                 </Text>
               </View>
 
@@ -770,6 +978,74 @@ export default function FishProfileScreen() {
                 </View>
               )}
             </View>
+          </View>
+
+          {/* Pricing - Moved below Tank Requirements */}
+          <View
+            className={cn(
+              'rounded-2xl p-4 mb-6',
+              isDark ? 'bg-slate-800' : 'bg-white'
+            )}
+          >
+            <SectionHeader
+              icon={PoundSterling}
+              title="Pricing"
+              isDark={isDark}
+              iconColor="#10B981"
+            />
+
+            <View className="flex-row justify-between items-center mb-3">
+              <Text
+                className={cn(
+                  'text-sm',
+                  isDark ? 'text-slate-400' : 'text-slate-500'
+                )}
+              >
+                Price Range
+              </Text>
+              <Text
+                className={cn(
+                  'text-lg font-bold',
+                  isDark ? 'text-white' : 'text-slate-900'
+                )}
+              >
+                £{fish.price.min} - £{fish.price.max}
+              </Text>
+            </View>
+
+            <View className="flex-row justify-between items-center mb-4">
+              <Text
+                className={cn(
+                  'text-sm',
+                  isDark ? 'text-slate-400' : 'text-slate-500'
+                )}
+              >
+                Average Price
+              </Text>
+              <Text className="text-lg font-bold text-emerald-500">
+                ~£{avgPrice.toFixed(0)}
+              </Text>
+            </View>
+
+            <Pressable
+              onPress={handleFindStore}
+              className="flex-row items-center justify-center py-3 rounded-xl bg-sky-500"
+            >
+              <MapPin size={18} color="white" />
+              <Text className="text-white font-semibold ml-2">
+                Find Stores Near Me
+              </Text>
+              <ExternalLink size={14} color="white" className="ml-1" />
+            </Pressable>
+
+            <Text
+              className={cn(
+                'text-xs text-center mt-2',
+                isDark ? 'text-slate-500' : 'text-slate-400'
+              )}
+            >
+              Prices updated weekly. Actual prices may vary by location.
+            </Text>
           </View>
 
           {/* Compatibility Section */}

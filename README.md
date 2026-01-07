@@ -15,10 +15,19 @@ A cross-platform mobile app that helps aquarium hobbyists determine fish and pla
 ### Search Tab (Combined Fish & Plant Browser)
 - Toggle between Fish and Plants modes
 - Search fish by name (common or scientific)
-- Filter by water type (freshwater/saltwater)
-- Filter by temperament (peaceful/semi-aggressive/aggressive)
-- Filter by care level (beginner/intermediate/advanced)
-- Browse aquarium plants with difficulty, lighting, and **placement filters** (foreground/midground/background/floating)
+- **Comprehensive Fish Filters**:
+  - Water type (freshwater/saltwater)
+  - Temperament (peaceful/semi-aggressive/aggressive)
+  - Care level (beginner/intermediate/advanced)
+  - Tank zone (top/middle/bottom/all levels)
+  - Min tank size (small ≤20g, medium 21-55g, large 55g+)
+  - Max fish size (small ≤3in, medium 3-6in, large 6in+)
+- **Comprehensive Plant Filters**:
+  - Difficulty (easy/moderate/difficult)
+  - Lighting (low/medium/high)
+  - Placement (foreground/midground/background/floating)
+  - Growth rate (slow/moderate/fast)
+  - CO2 requirement (no CO2/CO2 required)
 - Tap sparkle icon on any fish to check compatibility with other fish
 - **Scrollable fish selection** - tap fish directly without typing to check compatibility
 - Prices displayed in GBP (£)
@@ -29,13 +38,15 @@ Each fish has a dedicated profile page with:
 - Common name and scientific name
 - Temperament indicator
 - Care level indicator (beginner/intermediate/advanced)
-- Minimum tank size requirements
-- Water parameters (temperature, pH, hardness)
+- **Collapsible info card** with expandable sections for:
+  - **Max Size** - Adult size with care tips
+  - **Minimum Tank Size** - With explanation for tank sizing
+  - **Tank Zone** - Dynamic icon showing which water level (top/middle/bottom) with detailed tips
+- Water parameters (temperature, pH, hardness) - respects user's temperature unit preference
 - Diet type and feeding notes
-- Tank zone preference (top/middle/bottom)
 - Tank requirements (plants, hiding spaces, schooling needs)
 - Compatibility lists (compatible, conditional, incompatible fish)
-- Price range in GBP (£)
+- Price range in GBP (£) - now displayed below tank requirements
 - Find stores near me feature
 
 ### Plant Profiles
@@ -45,7 +56,7 @@ Each plant has a dedicated profile page with:
   - **Difficulty** - Tap to see what each level means, requirements, and who it's suitable for
   - **Lighting** - Tap to see PAR values and lighting descriptions
   - **Growth Rate** - Tap to see what slow/moderate/fast growth means for maintenance
-  - **Placement** - Tap to learn about foreground/midground/background/floating positions
+  - **Placement** - Dynamic icon showing placement zone (foreground/midground/background/floating) with tips
 - CO2 requirements
 - Water parameters (temperature, pH, hardness)
 - Care notes
@@ -79,6 +90,19 @@ Each plant has a dedicated profile page with:
 - Overstocking warnings
 - Quick access to fish and plant profiles
 - Tank cost breakdown in GBP (£)
+- **Tap any tank to view detailed tank page**:
+  - Enlarged focused view of the tank
+  - Fish and plants displayed in horizontal scrollable cards
+  - **Water change reminder scheduling**:
+    - Set frequency (daily/weekly/biweekly/monthly)
+    - Choose day of week and time
+    - Syncs to phone notifications
+    - Log water changes with one tap
+  - **Tank Journey (Activity Log)**:
+    - Track all tank activities from creation
+    - See when fish/plants were added or removed
+    - View water change history
+    - Reminder changes logged
 
 ### Settings
 - User authentication (sign in/sign out)

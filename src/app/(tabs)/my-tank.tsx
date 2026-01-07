@@ -242,12 +242,14 @@ const TankCard = ({
   isActive,
   onSelect,
   onDelete,
+  onViewDetails,
   isDark,
 }: {
   tank: TankSetup;
   isActive: boolean;
   onSelect: () => void;
   onDelete: () => void;
+  onViewDetails: () => void;
   isDark: boolean;
 }) => {
   const fish = tank.fishIds.map((id) => getFishById(id)).filter((f): f is Fish => f !== undefined);
@@ -265,7 +267,8 @@ const TankCard = ({
 
   return (
     <Pressable
-      onPress={onSelect}
+      onPress={onViewDetails}
+      onLongPress={onSelect}
       className={cn(
         'rounded-2xl p-4 mb-3',
         isActive
@@ -841,6 +844,7 @@ export default function MyTankScreen() {
                   isActive={tank.id === activeTankId}
                   onSelect={() => setActiveTank(tank.id)}
                   onDelete={() => removeTank(tank.id)}
+                  onViewDetails={() => router.push(`/tank/${tank.id}`)}
                   isDark={isDark}
                 />
               ))}

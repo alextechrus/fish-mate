@@ -33,7 +33,7 @@ import {
 import { useColorScheme } from '@/lib/useColorScheme';
 import { fishDatabase, searchFish } from '@/lib/data/fish-database';
 import { plantDatabase, searchPlants, Plant, PlantPlacement } from '@/lib/data/plant-database';
-import { Fish, WaterType, Temperament } from '@/lib/types/fish';
+import { Fish, WaterType, Temperament, TankZone } from '@/lib/types/fish';
 import { checkTwoFishCompatibility } from '@/lib/utils/compatibility';
 import { CompatibilityStatus } from '@/lib/types/fish';
 import { cn } from '@/lib/cn';
@@ -542,12 +542,19 @@ export default function SearchScreen() {
   const [searchMode, setSearchMode] = useState<SearchMode>('fish');
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  // Fish filters
   const [selectedWaterType, setSelectedWaterType] = useState<WaterType | null>(null);
   const [selectedTemperament, setSelectedTemperament] = useState<Temperament | null>(null);
   const [selectedCareLevel, setSelectedCareLevel] = useState<'beginner' | 'intermediate' | 'advanced' | null>(null);
+  const [selectedTankZone, setSelectedTankZone] = useState<TankZone | null>(null);
+  const [selectedMinTankSize, setSelectedMinTankSize] = useState<'small' | 'medium' | 'large' | null>(null);
+  const [selectedMaxSize, setSelectedMaxSize] = useState<'small' | 'medium' | 'large' | null>(null);
+  // Plant filters
   const [selectedPlantDifficulty, setSelectedPlantDifficulty] = useState<'easy' | 'moderate' | 'difficult' | null>(null);
   const [selectedPlantLighting, setSelectedPlantLighting] = useState<'low' | 'medium' | 'high' | null>(null);
   const [selectedPlantPlacement, setSelectedPlantPlacement] = useState<PlantPlacement | null>(null);
+  const [selectedGrowthRate, setSelectedGrowthRate] = useState<'slow' | 'moderate' | 'fast' | null>(null);
+  const [selectedCO2, setSelectedCO2] = useState<boolean | null>(null);
 
   // Compatibility modal state
   const [compatibilityModalVisible, setCompatibilityModalVisible] = useState(false);
@@ -570,9 +577,26 @@ export default function SearchScreen() {
     if (selectedCareLevel) {
       results = results.filter((f) => f.careLevel === selectedCareLevel);
     }
+    if (selectedTankZone) {
+      results = results.filter((f) => f.tankZone === selectedTankZone || f.tankZone === 'all');
+    }
+    if (selectedMinTankSize) {
+      results = results.filter((f) => {
+        if (selectedMinTankSize === 'small') return f.minTankSize <= 20;
+        if (selectedMinTankSize === 'medium') return f.minTankSize > 20 && f.minTankSize <= 55;
+        return f.minTankSize > 55; // large
+      });
+    }
+    if (selectedMaxSize) {
+      results = results.filter((f) => {
+        if (selectedMaxSize === 'small') return f.maxSize <= 3;
+        if (selectedMaxSize === 'medium') return f.maxSize > 3 && f.maxSize <= 6;
+        return f.maxSize > 6; // large
+      });
+    }
 
     return results;
-  }, [searchQuery, selectedWaterType, selectedTemperament, selectedCareLevel]);
+  }, [searchQuery, selectedWaterType, selectedTemperament, selectedCareLevel, selectedTankZone, selectedMinTankSize, selectedMaxSize]);
 
   const filteredPlants = useMemo(() => {
     let results = plantDatabase;
@@ -590,22 +614,35 @@ export default function SearchScreen() {
     if (selectedPlantPlacement) {
       results = results.filter((p) => p.placement === selectedPlantPlacement);
     }
+    if (selectedGrowthRate) {
+      results = results.filter((p) => p.growthRate === selectedGrowthRate);
+    }
+    if (selectedCO2 !== null) {
+      results = results.filter((p) => p.co2Required === selectedCO2);
+    }
 
     return results;
-  }, [searchQuery, selectedPlantDifficulty, selectedPlantLighting, selectedPlantPlacement]);
+  }, [searchQuery, selectedPlantDifficulty, selectedPlantLighting, selectedPlantPlacement, selectedGrowthRate, selectedCO2]);
 
   const clearFilters = () => {
     setSelectedWaterType(null);
     setSelectedTemperament(null);
     setSelectedCareLevel(null);
+    setSelectedTankZone(null);
+    setSelectedMinTankSize(null);
+    setSelectedMaxSize(null);
     setSelectedPlantDifficulty(null);
     setSelectedPlantLighting(null);
     setSelectedPlantPlacement(null);
+    setSelectedGrowthRate(null);
+    setSelectedCO2(null);
   };
 
   const hasActiveFilters =
     selectedWaterType || selectedTemperament || selectedCareLevel ||
-    selectedPlantDifficulty || selectedPlantLighting || selectedPlantPlacement;
+    selectedTankZone || selectedMinTankSize || selectedMaxSize ||
+    selectedPlantDifficulty || selectedPlantLighting || selectedPlantPlacement ||
+    selectedGrowthRate || selectedCO2 !== null;
 
   const handleCheckCompatibility = (fish: Fish) => {
     setSelectedFishForCompatibility(fish);
@@ -749,7 +786,7 @@ export default function SearchScreen() {
               )}
             >
               {searchMode === 'fish' ? (
-                <>
+                <ScrollView style={{ maxHeight: 400 }} showsVerticalScrollIndicator={false}>
                   <Text className={cn('text-sm font-semibold mb-2', isDark ? 'text-slate-300' : 'text-slate-600')}>
                     Water Type
                   </Text>
@@ -770,14 +807,42 @@ export default function SearchScreen() {
                   <Text className={cn('text-sm font-semibold mb-2', isDark ? 'text-slate-300' : 'text-slate-600')}>
                     Care Level
                   </Text>
-                  <View className="flex-row flex-wrap">
+                  <View className="flex-row flex-wrap mb-3">
                     <FilterChip label="Beginner" isActive={selectedCareLevel === 'beginner'} onPress={() => setSelectedCareLevel(selectedCareLevel === 'beginner' ? null : 'beginner')} isDark={isDark} />
                     <FilterChip label="Intermediate" isActive={selectedCareLevel === 'intermediate'} onPress={() => setSelectedCareLevel(selectedCareLevel === 'intermediate' ? null : 'intermediate')} isDark={isDark} />
                     <FilterChip label="Advanced" isActive={selectedCareLevel === 'advanced'} onPress={() => setSelectedCareLevel(selectedCareLevel === 'advanced' ? null : 'advanced')} isDark={isDark} />
                   </View>
-                </>
+
+                  <Text className={cn('text-sm font-semibold mb-2', isDark ? 'text-slate-300' : 'text-slate-600')}>
+                    Tank Zone
+                  </Text>
+                  <View className="flex-row flex-wrap mb-3">
+                    <FilterChip label="Top" isActive={selectedTankZone === 'top'} onPress={() => setSelectedTankZone(selectedTankZone === 'top' ? null : 'top')} isDark={isDark} />
+                    <FilterChip label="Middle" isActive={selectedTankZone === 'middle'} onPress={() => setSelectedTankZone(selectedTankZone === 'middle' ? null : 'middle')} isDark={isDark} />
+                    <FilterChip label="Bottom" isActive={selectedTankZone === 'bottom'} onPress={() => setSelectedTankZone(selectedTankZone === 'bottom' ? null : 'bottom')} isDark={isDark} />
+                    <FilterChip label="All Levels" isActive={selectedTankZone === 'all'} onPress={() => setSelectedTankZone(selectedTankZone === 'all' ? null : 'all')} isDark={isDark} />
+                  </View>
+
+                  <Text className={cn('text-sm font-semibold mb-2', isDark ? 'text-slate-300' : 'text-slate-600')}>
+                    Min Tank Size
+                  </Text>
+                  <View className="flex-row flex-wrap mb-3">
+                    <FilterChip label="Small (≤20g)" isActive={selectedMinTankSize === 'small'} onPress={() => setSelectedMinTankSize(selectedMinTankSize === 'small' ? null : 'small')} isDark={isDark} />
+                    <FilterChip label="Medium (21-55g)" isActive={selectedMinTankSize === 'medium'} onPress={() => setSelectedMinTankSize(selectedMinTankSize === 'medium' ? null : 'medium')} isDark={isDark} />
+                    <FilterChip label="Large (55g+)" isActive={selectedMinTankSize === 'large'} onPress={() => setSelectedMinTankSize(selectedMinTankSize === 'large' ? null : 'large')} isDark={isDark} />
+                  </View>
+
+                  <Text className={cn('text-sm font-semibold mb-2', isDark ? 'text-slate-300' : 'text-slate-600')}>
+                    Max Fish Size
+                  </Text>
+                  <View className="flex-row flex-wrap">
+                    <FilterChip label="Small (≤3in)" isActive={selectedMaxSize === 'small'} onPress={() => setSelectedMaxSize(selectedMaxSize === 'small' ? null : 'small')} isDark={isDark} />
+                    <FilterChip label="Medium (3-6in)" isActive={selectedMaxSize === 'medium'} onPress={() => setSelectedMaxSize(selectedMaxSize === 'medium' ? null : 'medium')} isDark={isDark} />
+                    <FilterChip label="Large (6in+)" isActive={selectedMaxSize === 'large'} onPress={() => setSelectedMaxSize(selectedMaxSize === 'large' ? null : 'large')} isDark={isDark} />
+                  </View>
+                </ScrollView>
               ) : (
-                <>
+                <ScrollView style={{ maxHeight: 400 }} showsVerticalScrollIndicator={false}>
                   <Text className={cn('text-sm font-semibold mb-2', isDark ? 'text-slate-300' : 'text-slate-600')}>
                     Difficulty
                   </Text>
@@ -799,13 +864,30 @@ export default function SearchScreen() {
                   <Text className={cn('text-sm font-semibold mb-2', isDark ? 'text-slate-300' : 'text-slate-600')}>
                     Placement
                   </Text>
-                  <View className="flex-row flex-wrap">
+                  <View className="flex-row flex-wrap mb-3">
                     <FilterChip label="Foreground" isActive={selectedPlantPlacement === 'foreground'} onPress={() => setSelectedPlantPlacement(selectedPlantPlacement === 'foreground' ? null : 'foreground')} isDark={isDark} />
                     <FilterChip label="Midground" isActive={selectedPlantPlacement === 'midground'} onPress={() => setSelectedPlantPlacement(selectedPlantPlacement === 'midground' ? null : 'midground')} isDark={isDark} />
                     <FilterChip label="Background" isActive={selectedPlantPlacement === 'background'} onPress={() => setSelectedPlantPlacement(selectedPlantPlacement === 'background' ? null : 'background')} isDark={isDark} />
                     <FilterChip label="Floating" isActive={selectedPlantPlacement === 'floating'} onPress={() => setSelectedPlantPlacement(selectedPlantPlacement === 'floating' ? null : 'floating')} isDark={isDark} />
                   </View>
-                </>
+
+                  <Text className={cn('text-sm font-semibold mb-2', isDark ? 'text-slate-300' : 'text-slate-600')}>
+                    Growth Rate
+                  </Text>
+                  <View className="flex-row flex-wrap mb-3">
+                    <FilterChip label="Slow" isActive={selectedGrowthRate === 'slow'} onPress={() => setSelectedGrowthRate(selectedGrowthRate === 'slow' ? null : 'slow')} isDark={isDark} />
+                    <FilterChip label="Moderate" isActive={selectedGrowthRate === 'moderate'} onPress={() => setSelectedGrowthRate(selectedGrowthRate === 'moderate' ? null : 'moderate')} isDark={isDark} />
+                    <FilterChip label="Fast" isActive={selectedGrowthRate === 'fast'} onPress={() => setSelectedGrowthRate(selectedGrowthRate === 'fast' ? null : 'fast')} isDark={isDark} />
+                  </View>
+
+                  <Text className={cn('text-sm font-semibold mb-2', isDark ? 'text-slate-300' : 'text-slate-600')}>
+                    CO2 Requirement
+                  </Text>
+                  <View className="flex-row flex-wrap">
+                    <FilterChip label="No CO2 Needed" isActive={selectedCO2 === false} onPress={() => setSelectedCO2(selectedCO2 === false ? null : false)} isDark={isDark} />
+                    <FilterChip label="CO2 Required" isActive={selectedCO2 === true} onPress={() => setSelectedCO2(selectedCO2 === true ? null : true)} isDark={isDark} />
+                  </View>
+                </ScrollView>
               )}
 
               {hasActiveFilters && (

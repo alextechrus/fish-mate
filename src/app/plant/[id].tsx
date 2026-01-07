@@ -38,7 +38,7 @@ import {
   Award,
 } from 'lucide-react-native';
 import { useColorScheme } from '@/lib/useColorScheme';
-import { getPlantById } from '@/lib/data/plant-database';
+import { getPlantById, PlantPlacement } from '@/lib/data/plant-database';
 import { getFishById } from '@/lib/data/fish-database';
 import { Fish } from '@/lib/types/fish';
 import { cn } from '@/lib/cn';
@@ -92,6 +92,91 @@ const placementExplanations: Record<string, { title: string; description: string
     description: 'These plants float freely on the water surface, with roots dangling below.',
     tips: 'Simply place on the water surface - no planting needed. Provides shade for fish that prefer dimmer conditions. Can help reduce algae by competing for nutrients. May need thinning to prevent blocking too much light.',
   },
+};
+
+// Dynamic Placement Icon - highlights the relevant placement zone
+const PlacementIcon = ({ placement, size = 24, color = '#64748B' }: { placement: PlantPlacement; size?: number; color?: string }) => {
+  const layerHeight = size / 5;
+  const activeColor = color;
+  const inactiveColor = `${color}40`;
+
+  // For floating, show wavy lines at top
+  if (placement === 'floating') {
+    return (
+      <View style={{ width: size, height: size, justifyContent: 'center', alignItems: 'center' }}>
+        {/* Floating wavy lines */}
+        <View
+          style={{
+            width: size * 0.8,
+            height: layerHeight * 1.2,
+            backgroundColor: activeColor,
+            borderRadius: 4,
+            marginBottom: 3,
+          }}
+        />
+        <View
+          style={{
+            width: size * 0.6,
+            height: layerHeight,
+            backgroundColor: inactiveColor,
+            marginBottom: 2,
+          }}
+        />
+        <View
+          style={{
+            width: size * 0.7,
+            height: layerHeight,
+            backgroundColor: inactiveColor,
+            marginBottom: 2,
+          }}
+        />
+        <View
+          style={{
+            width: size * 0.8,
+            height: layerHeight,
+            backgroundColor: inactiveColor,
+            borderBottomLeftRadius: 4,
+            borderBottomRightRadius: 4,
+          }}
+        />
+      </View>
+    );
+  }
+
+  return (
+    <View style={{ width: size, height: size, justifyContent: 'center', alignItems: 'center' }}>
+      {/* Background layer (top) */}
+      <View
+        style={{
+          width: size * 0.8,
+          height: placement === 'background' ? layerHeight * 1.5 : layerHeight,
+          backgroundColor: placement === 'background' ? activeColor : inactiveColor,
+          borderTopLeftRadius: 4,
+          borderTopRightRadius: 4,
+          marginBottom: 2,
+        }}
+      />
+      {/* Midground layer (middle) */}
+      <View
+        style={{
+          width: size * 0.8,
+          height: placement === 'midground' ? layerHeight * 1.5 : layerHeight,
+          backgroundColor: placement === 'midground' ? activeColor : inactiveColor,
+          marginBottom: 2,
+        }}
+      />
+      {/* Foreground layer (bottom) */}
+      <View
+        style={{
+          width: size * 0.8,
+          height: placement === 'foreground' ? layerHeight * 1.5 : layerHeight,
+          backgroundColor: placement === 'foreground' ? activeColor : inactiveColor,
+          borderBottomLeftRadius: 4,
+          borderBottomRightRadius: 4,
+        }}
+      />
+    </View>
+  );
 };
 
 // Info tooltips content
@@ -196,6 +281,7 @@ const SectionHeader = ({
 // Collapsible info row component
 const CollapsibleInfoRow = ({
   icon: Icon,
+  customIcon,
   title,
   value,
   expandedContent,
@@ -205,7 +291,8 @@ const CollapsibleInfoRow = ({
   iconColor,
   isLast = false,
 }: {
-  icon: React.ElementType;
+  icon?: React.ElementType;
+  customIcon?: React.ReactNode;
   title: string;
   value: string;
   expandedContent: React.ReactNode;
@@ -240,7 +327,7 @@ const CollapsibleInfoRow = ({
           className="w-10 h-10 rounded-xl items-center justify-center mr-3"
           style={{ backgroundColor: `${iconColor || '#64748B'}20` }}
         >
-          <Icon size={20} color={iconColor || (isDark ? '#94A3B8' : '#64748B')} />
+          {customIcon ? customIcon : Icon && <Icon size={20} color={iconColor || (isDark ? '#94A3B8' : '#64748B')} />}
         </View>
         <View className="flex-1">
           <Text
@@ -803,7 +890,7 @@ export default function PlantProfileScreen() {
 
               {/* Placement */}
               <CollapsibleInfoRow
-                icon={Layers}
+                customIcon={<PlacementIcon placement={plant.placement} size={20} color={placementColor} />}
                 title="Placement"
                 value={plant.placement.charAt(0).toUpperCase() + plant.placement.slice(1)}
                 iconColor={placementColor}
