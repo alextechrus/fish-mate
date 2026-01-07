@@ -244,7 +244,9 @@ const SectionHeader = ({
 const TipsCarousel = ({ isDark }: { isDark: boolean }) => {
   const [currentTipIndex, setCurrentTipIndex] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
-  const screenWidth = Dimensions.get('window').width - 40; // Account for padding
+  const cardWidth = Dimensions.get('window').width - 80; // Card width with space for peek
+  const cardSpacing = 12; // Gap between cards
+  const scrollOffset = cardWidth + cardSpacing; // Total scroll per card
 
   // Auto-rotate every 5 seconds
   useEffect(() => {
@@ -252,7 +254,7 @@ const TipsCarousel = ({ isDark }: { isDark: boolean }) => {
       setCurrentTipIndex((prev) => {
         const nextIndex = (prev + 1) % aquariumTips.length;
         scrollRef.current?.scrollTo({
-          x: nextIndex * screenWidth,
+          x: nextIndex * scrollOffset,
           animated: true,
         });
         return nextIndex;
@@ -260,19 +262,19 @@ const TipsCarousel = ({ isDark }: { isDark: boolean }) => {
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [screenWidth]);
+  }, [scrollOffset]);
 
   const handleScroll = (event: { nativeEvent: { contentOffset: { x: number } } }) => {
     const offsetX = event.nativeEvent.contentOffset.x;
-    const index = Math.round(offsetX / screenWidth);
+    const index = Math.round(offsetX / scrollOffset);
     if (index !== currentTipIndex && index >= 0 && index < aquariumTips.length) {
       setCurrentTipIndex(index);
     }
   };
 
   return (
-    <View className="px-5 mb-6">
-      <View className="flex-row items-center mb-3">
+    <View className="mb-6">
+      <View className="flex-row items-center mb-3 px-5">
         <Lightbulb size={18} color={isDark ? '#F59E0B' : '#D97706'} />
         <Text
           className={cn(
@@ -287,10 +289,12 @@ const TipsCarousel = ({ isDark }: { isDark: boolean }) => {
       <ScrollView
         ref={scrollRef}
         horizontal
-        pagingEnabled
         showsHorizontalScrollIndicator={false}
         onScroll={handleScroll}
         scrollEventThrottle={16}
+        snapToInterval={scrollOffset}
+        decelerationRate="fast"
+        contentContainerStyle={{ paddingHorizontal: 20 }}
         style={{ flexGrow: 0 }}
       >
         {aquariumTips.map((tip, index) => {
@@ -298,17 +302,25 @@ const TipsCarousel = ({ isDark }: { isDark: boolean }) => {
           return (
             <View
               key={index}
-              style={{ width: screenWidth }}
+              style={{
+                width: cardWidth,
+                marginRight: index < aquariumTips.length - 1 ? cardSpacing : 0,
+              }}
               className={cn(
                 'rounded-2xl p-5',
-                isDark ? 'bg-slate-800' : 'bg-sky-50'
+                isDark ? 'bg-slate-800' : 'bg-white'
               )}
             >
               <View className="flex-row items-center mb-3">
-                <TipIcon size={20} color={tip.iconColor} />
+                <View
+                  className="w-8 h-8 rounded-lg items-center justify-center mr-2"
+                  style={{ backgroundColor: `${tip.iconColor}20` }}
+                >
+                  <TipIcon size={18} color={tip.iconColor} />
+                </View>
                 <Text
                   className={cn(
-                    'text-base font-bold ml-2',
+                    'text-base font-bold flex-1',
                     isDark ? 'text-white' : 'text-slate-900'
                   )}
                 >
@@ -329,14 +341,14 @@ const TipsCarousel = ({ isDark }: { isDark: boolean }) => {
       </ScrollView>
 
       {/* Pagination dots */}
-      <View className="flex-row justify-center mt-3">
+      <View className="flex-row justify-center mt-4">
         {aquariumTips.map((_, index) => (
           <Pressable
             key={index}
             onPress={() => {
               setCurrentTipIndex(index);
               scrollRef.current?.scrollTo({
-                x: index * screenWidth,
+                x: index * scrollOffset,
                 animated: true,
               });
             }}
