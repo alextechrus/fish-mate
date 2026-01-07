@@ -7,7 +7,8 @@ A cross-platform mobile app that helps aquarium hobbyists determine fish and pla
 ### Home Screen
 - Welcome dashboard with featured fish and plant sections
 - Quick access to Search and My Tank
-- Easy plants, beginner-friendly fish, freshwater, and saltwater categories
+- **Section order**: Freshwater Fish, Saltwater Fish, Easy Plants, Beginner Friendly Fish
+- **Section icons**: Each category has a distinctive icon (water droplets for freshwater, waves for saltwater, leaf for plants, sparkles for beginner fish)
 - **Rotating tips carousel** with 6 aquarium care tips (auto-rotates every 5 seconds)
 - Swipe or tap dots to navigate between tips
 

@@ -441,6 +441,56 @@ export default function HomeScreen() {
             </View>
           </View>
 
+          {/* Freshwater Fish */}
+          <View className="mb-6">
+            <SectionHeader
+              title="Freshwater Fish"
+              icon={Droplets}
+              iconColor="#0EA5E9"
+              onSeeAll={() => router.push('/(tabs)/search')}
+              isDark={isDark}
+            />
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 20 }}
+              style={{ flexGrow: 0 }}
+            >
+              {freshwaterFish.map((fish) => (
+                <FishCard
+                  key={fish.id}
+                  fish={fish}
+                  onPress={() => handleFishPress(fish)}
+                />
+              ))}
+            </ScrollView>
+          </View>
+
+          {/* Saltwater Fish */}
+          <View className="mb-6">
+            <SectionHeader
+              title="Saltwater Fish"
+              icon={Waves}
+              iconColor="#06B6D4"
+              onSeeAll={() => router.push('/(tabs)/search')}
+              isDark={isDark}
+            />
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 20 }}
+              style={{ flexGrow: 0 }}
+            >
+              {saltwaterFish.map((fish) => (
+                <FishCard
+                  key={fish.id}
+                  fish={fish}
+                  onPress={() => handleFishPress(fish)}
+                />
+              ))}
+            </ScrollView>
+          </View>
+
           {/* Easy Plants */}
           <View className="mb-6">
             <SectionHeader
@@ -466,10 +516,12 @@ export default function HomeScreen() {
             </ScrollView>
           </View>
 
-          {/* Beginner Friendly */}
+          {/* Beginner Friendly Fish */}
           <View className="mb-6">
             <SectionHeader
               title="Beginner Friendly"
+              icon={Sparkles}
+              iconColor="#F59E0B"
               onSeeAll={() => router.push('/(tabs)/search')}
               isDark={isDark}
             />
@@ -480,52 +532,6 @@ export default function HomeScreen() {
               style={{ flexGrow: 0 }}
             >
               {beginnerFish.map((fish) => (
-                <FishCard
-                  key={fish.id}
-                  fish={fish}
-                  onPress={() => handleFishPress(fish)}
-                />
-              ))}
-            </ScrollView>
-          </View>
-
-          {/* Freshwater */}
-          <View className="mb-6">
-            <SectionHeader
-              title="Freshwater Fish"
-              onSeeAll={() => router.push('/(tabs)/search')}
-              isDark={isDark}
-            />
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingHorizontal: 20 }}
-              style={{ flexGrow: 0 }}
-            >
-              {freshwaterFish.map((fish) => (
-                <FishCard
-                  key={fish.id}
-                  fish={fish}
-                  onPress={() => handleFishPress(fish)}
-                />
-              ))}
-            </ScrollView>
-          </View>
-
-          {/* Saltwater */}
-          <View className="mb-6">
-            <SectionHeader
-              title="Saltwater Fish"
-              onSeeAll={() => router.push('/(tabs)/search')}
-              isDark={isDark}
-            />
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingHorizontal: 20 }}
-              style={{ flexGrow: 0 }}
-            >
-              {saltwaterFish.map((fish) => (
                 <FishCard
                   key={fish.id}
                   fish={fish}
