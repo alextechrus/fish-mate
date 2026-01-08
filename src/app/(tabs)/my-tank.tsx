@@ -948,7 +948,11 @@ export default function MyTankScreen() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showRenameModal, setShowRenameModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showDeleteFishModal, setShowDeleteFishModal] = useState(false);
+  const [showDeletePlantModal, setShowDeletePlantModal] = useState(false);
   const [deletingTankId, setDeletingTankId] = useState<string | null>(null);
+  const [deletingFish, setDeletingFish] = useState<Fish | null>(null);
+  const [deletingPlant, setDeletingPlant] = useState<Plant | null>(null);
   const [selectedTankId, setSelectedTankId] = useState<string | null>(null);
   const [renamingTankId, setRenamingTankId] = useState<string | null>(null);
 
@@ -982,6 +986,32 @@ export default function MyTankScreen() {
       removeTank(deletingTankId);
       setShowDeleteModal(false);
       setDeletingTankId(null);
+    }
+  };
+
+  const handleDeleteFish = (fish: Fish) => {
+    setDeletingFish(fish);
+    setShowDeleteFishModal(true);
+  };
+
+  const confirmDeleteFish = () => {
+    if (deletingFish && activeTank) {
+      removeFishFromTank(activeTank.id, deletingFish.id);
+      setShowDeleteFishModal(false);
+      setDeletingFish(null);
+    }
+  };
+
+  const handleDeletePlant = (plant: Plant) => {
+    setDeletingPlant(plant);
+    setShowDeletePlantModal(true);
+  };
+
+  const confirmDeletePlant = () => {
+    if (deletingPlant && activeTank) {
+      removePlantFromTank(activeTank.id, deletingPlant.id);
+      setShowDeletePlantModal(false);
+      setDeletingPlant(null);
     }
   };
 
@@ -1212,7 +1242,7 @@ export default function MyTankScreen() {
                         <FishInTank
                           key={fish.id}
                           fish={fish}
-                          onRemove={() => removeFishFromTank(activeTank.id, fish.id)}
+                          onRemove={() => handleDeleteFish(fish)}
                           onPress={() => router.push(`/fish/${fish.id}`)}
                           isDark={isDark}
                         />
@@ -1269,7 +1299,7 @@ export default function MyTankScreen() {
                       <PlantInTank
                         key={plant.id}
                         plant={plant}
-                        onRemove={() => removePlantFromTank(activeTank.id, plant.id)}
+                        onRemove={() => handleDeletePlant(plant)}
                         onPress={() => router.push(`/plant/${plant.id}`)}
                         isDark={isDark}
                       />
@@ -1369,6 +1399,148 @@ export default function MyTankScreen() {
                 >
                   <Text className="text-center font-semibold text-white">
                     Delete
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Delete Fish Confirmation Modal */}
+        <Modal
+          visible={showDeleteFishModal}
+          transparent
+          animationType="fade"
+          onRequestClose={() => {
+            setShowDeleteFishModal(false);
+            setDeletingFish(null);
+          }}
+        >
+          <View className="flex-1 bg-black/50 justify-center items-center px-6">
+            <View
+              className={cn(
+                'w-full max-w-sm rounded-2xl p-6',
+                isDark ? 'bg-slate-800' : 'bg-white'
+              )}
+            >
+              <View className="items-center mb-4">
+                <View className="w-16 h-16 rounded-full bg-red-500/20 items-center justify-center mb-4">
+                  <Trash2 size={32} color="#EF4444" />
+                </View>
+                <Text
+                  className={cn(
+                    'text-xl font-bold text-center',
+                    isDark ? 'text-white' : 'text-slate-900'
+                  )}
+                >
+                  Remove Fish?
+                </Text>
+              </View>
+              <Text
+                className={cn(
+                  'text-center mb-6',
+                  isDark ? 'text-slate-400' : 'text-slate-600'
+                )}
+              >
+                Are you sure you want to remove {deletingFish?.commonName} from your tank?
+              </Text>
+              <View className="flex-row gap-3">
+                <Pressable
+                  onPress={() => {
+                    setShowDeleteFishModal(false);
+                    setDeletingFish(null);
+                  }}
+                  className={cn(
+                    'flex-1 py-3 rounded-xl',
+                    isDark ? 'bg-slate-700' : 'bg-slate-100'
+                  )}
+                >
+                  <Text
+                    className={cn(
+                      'text-center font-semibold',
+                      isDark ? 'text-white' : 'text-slate-900'
+                    )}
+                  >
+                    Cancel
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={confirmDeleteFish}
+                  className="flex-1 py-3 rounded-xl bg-red-500"
+                >
+                  <Text className="text-center font-semibold text-white">
+                    Remove
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Delete Plant Confirmation Modal */}
+        <Modal
+          visible={showDeletePlantModal}
+          transparent
+          animationType="fade"
+          onRequestClose={() => {
+            setShowDeletePlantModal(false);
+            setDeletingPlant(null);
+          }}
+        >
+          <View className="flex-1 bg-black/50 justify-center items-center px-6">
+            <View
+              className={cn(
+                'w-full max-w-sm rounded-2xl p-6',
+                isDark ? 'bg-slate-800' : 'bg-white'
+              )}
+            >
+              <View className="items-center mb-4">
+                <View className="w-16 h-16 rounded-full bg-red-500/20 items-center justify-center mb-4">
+                  <Trash2 size={32} color="#EF4444" />
+                </View>
+                <Text
+                  className={cn(
+                    'text-xl font-bold text-center',
+                    isDark ? 'text-white' : 'text-slate-900'
+                  )}
+                >
+                  Remove Plant?
+                </Text>
+              </View>
+              <Text
+                className={cn(
+                  'text-center mb-6',
+                  isDark ? 'text-slate-400' : 'text-slate-600'
+                )}
+              >
+                Are you sure you want to remove {deletingPlant?.commonName} from your tank?
+              </Text>
+              <View className="flex-row gap-3">
+                <Pressable
+                  onPress={() => {
+                    setShowDeletePlantModal(false);
+                    setDeletingPlant(null);
+                  }}
+                  className={cn(
+                    'flex-1 py-3 rounded-xl',
+                    isDark ? 'bg-slate-700' : 'bg-slate-100'
+                  )}
+                >
+                  <Text
+                    className={cn(
+                      'text-center font-semibold',
+                      isDark ? 'text-white' : 'text-slate-900'
+                    )}
+                  >
+                    Cancel
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={confirmDeletePlant}
+                  className="flex-1 py-3 rounded-xl bg-red-500"
+                >
+                  <Text className="text-center font-semibold text-white">
+                    Remove
                   </Text>
                 </Pressable>
               </View>

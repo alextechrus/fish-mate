@@ -413,6 +413,21 @@ function SettingsContent({ isDark }: { isDark: boolean }) {
 
   const [shareModalVisible, setShareModalVisible] = useState(false);
   const [selectedTank, setSelectedTank] = useState<TankSetup | null>(null);
+  const [showDeleteSharedModal, setShowDeleteSharedModal] = useState(false);
+  const [deletingSharedTank, setDeletingSharedTank] = useState<SharedTank | null>(null);
+
+  const handleDeleteSharedTank = (sharedTank: SharedTank) => {
+    setDeletingSharedTank(sharedTank);
+    setShowDeleteSharedModal(true);
+  };
+
+  const confirmDeleteSharedTank = () => {
+    if (deletingSharedTank) {
+      removeSharedTank(deletingSharedTank.id);
+      setShowDeleteSharedModal(false);
+      setDeletingSharedTank(null);
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -810,7 +825,7 @@ function SettingsContent({ isDark }: { isDark: boolean }) {
                 <SharedTankCard
                   key={sharedTank.id}
                   sharedTank={sharedTank}
-                  onRemove={() => removeSharedTank(sharedTank.id)}
+                  onRemove={() => handleDeleteSharedTank(sharedTank)}
                   isDark={isDark}
                 />
               ))}
@@ -962,6 +977,77 @@ function SettingsContent({ isDark }: { isDark: boolean }) {
         tank={selectedTank}
         isDark={isDark}
       />
+
+      {/* Delete Shared Tank Confirmation Modal */}
+      <Modal
+        visible={showDeleteSharedModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          setShowDeleteSharedModal(false);
+          setDeletingSharedTank(null);
+        }}
+      >
+        <View className="flex-1 bg-black/50 justify-center items-center px-6">
+          <View
+            className={cn(
+              'w-full max-w-sm rounded-2xl p-6',
+              isDark ? 'bg-slate-800' : 'bg-white'
+            )}
+          >
+            <View className="items-center mb-4">
+              <View className="w-16 h-16 rounded-full bg-red-500/20 items-center justify-center mb-4">
+                <Trash2 size={32} color="#EF4444" />
+              </View>
+              <Text
+                className={cn(
+                  'text-xl font-bold text-center',
+                  isDark ? 'text-white' : 'text-slate-900'
+                )}
+              >
+                Remove Shared Tank?
+              </Text>
+            </View>
+            <Text
+              className={cn(
+                'text-center mb-6',
+                isDark ? 'text-slate-400' : 'text-slate-600'
+              )}
+            >
+              Are you sure you want to remove "{deletingSharedTank?.tankData.name}" from your shared tanks?
+            </Text>
+            <View className="flex-row gap-3">
+              <Pressable
+                onPress={() => {
+                  setShowDeleteSharedModal(false);
+                  setDeletingSharedTank(null);
+                }}
+                className={cn(
+                  'flex-1 py-3 rounded-xl',
+                  isDark ? 'bg-slate-700' : 'bg-slate-100'
+                )}
+              >
+                <Text
+                  className={cn(
+                    'text-center font-semibold',
+                    isDark ? 'text-white' : 'text-slate-900'
+                  )}
+                >
+                  Cancel
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={confirmDeleteSharedTank}
+                className="flex-1 py-3 rounded-xl bg-red-500"
+              >
+                <Text className="text-center font-semibold text-white">
+                  Remove
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }

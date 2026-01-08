@@ -338,6 +338,10 @@ export default function TankDetailScreen() {
   const volumeUnit = useSettingsStore((s) => s.volumeUnit);
 
   const [showReminderModal, setShowReminderModal] = useState(false);
+  const [showDeleteFishModal, setShowDeleteFishModal] = useState(false);
+  const [showDeletePlantModal, setShowDeletePlantModal] = useState(false);
+  const [deletingFish, setDeletingFish] = useState<Fish | null>(null);
+  const [deletingPlant, setDeletingPlant] = useState<Plant | null>(null);
 
   const tanks = useTankStore((s) => s.tanks);
   const removeFishFromTank = useTankStore((s) => s.removeFishFromTank);
@@ -368,6 +372,32 @@ export default function TankDetailScreen() {
   const activities = useMemo(() => {
     return (tank?.activities || []).slice().reverse().slice(0, 20);
   }, [tank?.activities]);
+
+  const handleDeleteFish = (f: Fish) => {
+    setDeletingFish(f);
+    setShowDeleteFishModal(true);
+  };
+
+  const confirmDeleteFish = () => {
+    if (deletingFish && tank) {
+      removeFishFromTank(tank.id, deletingFish.id, deletingFish.commonName);
+      setShowDeleteFishModal(false);
+      setDeletingFish(null);
+    }
+  };
+
+  const handleDeletePlant = (p: Plant) => {
+    setDeletingPlant(p);
+    setShowDeletePlantModal(true);
+  };
+
+  const confirmDeletePlant = () => {
+    if (deletingPlant && tank) {
+      removePlantFromTank(tank.id, deletingPlant.id, deletingPlant.commonName);
+      setShowDeletePlantModal(false);
+      setDeletingPlant(null);
+    }
+  };
 
   // Request notification permissions
   useEffect(() => {
@@ -620,7 +650,7 @@ export default function TankDetailScreen() {
                         {f.commonName}
                       </Text>
                       <Pressable
-                        onPress={() => removeFishFromTank(tank.id, f.id, f.commonName)}
+                        onPress={() => handleDeleteFish(f)}
                         className="absolute top-2 right-2 bg-red-500/20 rounded-full p-1"
                       >
                         <Trash2 size={12} color="#EF4444" />
@@ -690,7 +720,7 @@ export default function TankDetailScreen() {
                         {p.commonName}
                       </Text>
                       <Pressable
-                        onPress={() => removePlantFromTank(tank.id, p.id, p.commonName)}
+                        onPress={() => handleDeletePlant(p)}
                         className="absolute top-2 right-2 bg-red-500/20 rounded-full p-1"
                       >
                         <Trash2 size={12} color="#EF4444" />
@@ -745,6 +775,148 @@ export default function TankDetailScreen() {
         onSave={handleSaveReminder}
         isDark={isDark}
       />
+
+      {/* Delete Fish Confirmation Modal */}
+      <Modal
+        visible={showDeleteFishModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          setShowDeleteFishModal(false);
+          setDeletingFish(null);
+        }}
+      >
+        <View className="flex-1 bg-black/50 justify-center items-center px-6">
+          <View
+            className={cn(
+              'w-full max-w-sm rounded-2xl p-6',
+              isDark ? 'bg-slate-800' : 'bg-white'
+            )}
+          >
+            <View className="items-center mb-4">
+              <View className="w-16 h-16 rounded-full bg-red-500/20 items-center justify-center mb-4">
+                <Trash2 size={32} color="#EF4444" />
+              </View>
+              <Text
+                className={cn(
+                  'text-xl font-bold text-center',
+                  isDark ? 'text-white' : 'text-slate-900'
+                )}
+              >
+                Remove Fish?
+              </Text>
+            </View>
+            <Text
+              className={cn(
+                'text-center mb-6',
+                isDark ? 'text-slate-400' : 'text-slate-600'
+              )}
+            >
+              Are you sure you want to remove {deletingFish?.commonName} from this tank?
+            </Text>
+            <View className="flex-row gap-3">
+              <Pressable
+                onPress={() => {
+                  setShowDeleteFishModal(false);
+                  setDeletingFish(null);
+                }}
+                className={cn(
+                  'flex-1 py-3 rounded-xl',
+                  isDark ? 'bg-slate-700' : 'bg-slate-100'
+                )}
+              >
+                <Text
+                  className={cn(
+                    'text-center font-semibold',
+                    isDark ? 'text-white' : 'text-slate-900'
+                  )}
+                >
+                  Cancel
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={confirmDeleteFish}
+                className="flex-1 py-3 rounded-xl bg-red-500"
+              >
+                <Text className="text-center font-semibold text-white">
+                  Remove
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Delete Plant Confirmation Modal */}
+      <Modal
+        visible={showDeletePlantModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          setShowDeletePlantModal(false);
+          setDeletingPlant(null);
+        }}
+      >
+        <View className="flex-1 bg-black/50 justify-center items-center px-6">
+          <View
+            className={cn(
+              'w-full max-w-sm rounded-2xl p-6',
+              isDark ? 'bg-slate-800' : 'bg-white'
+            )}
+          >
+            <View className="items-center mb-4">
+              <View className="w-16 h-16 rounded-full bg-red-500/20 items-center justify-center mb-4">
+                <Trash2 size={32} color="#EF4444" />
+              </View>
+              <Text
+                className={cn(
+                  'text-xl font-bold text-center',
+                  isDark ? 'text-white' : 'text-slate-900'
+                )}
+              >
+                Remove Plant?
+              </Text>
+            </View>
+            <Text
+              className={cn(
+                'text-center mb-6',
+                isDark ? 'text-slate-400' : 'text-slate-600'
+              )}
+            >
+              Are you sure you want to remove {deletingPlant?.commonName} from this tank?
+            </Text>
+            <View className="flex-row gap-3">
+              <Pressable
+                onPress={() => {
+                  setShowDeletePlantModal(false);
+                  setDeletingPlant(null);
+                }}
+                className={cn(
+                  'flex-1 py-3 rounded-xl',
+                  isDark ? 'bg-slate-700' : 'bg-slate-100'
+                )}
+              >
+                <Text
+                  className={cn(
+                    'text-center font-semibold',
+                    isDark ? 'text-white' : 'text-slate-900'
+                  )}
+                >
+                  Cancel
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={confirmDeletePlant}
+                className="flex-1 py-3 rounded-xl bg-red-500"
+              >
+                <Text className="text-center font-semibold text-white">
+                  Remove
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
