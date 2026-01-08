@@ -79,7 +79,7 @@ const FishCard = ({ fish, onPress }: { fish: Fish; onPress: () => void }) => {
       }}
     >
       <Image
-        source={{ uri: imageUrl }}
+        source={imageUrl}
         className="w-full h-24"
         resizeMode="cover"
       />
@@ -139,7 +139,7 @@ const PlantCard = ({ plant, onPress }: { plant: Plant; onPress: () => void }) =>
       }}
     >
       <Image
-        source={{ uri: imageUrl }}
+        source={imageUrl}
         className="w-full h-24"
         resizeMode="cover"
       />

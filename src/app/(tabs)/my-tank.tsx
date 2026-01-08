@@ -43,13 +43,14 @@ import { checkMultipleFishCompatibility, getSuggestedCompatibleFish } from '@/li
 import { WaterType, Fish, TankSetup, CompatibilityResult } from '@/lib/types/fish';
 import { cn } from '@/lib/cn';
 import { useFishImage, usePlantImage } from '@/lib/hooks/useImageUrl';
+import { getImageSource } from '@/lib/utils/image-source';
 
 // Fish image component with auto-generation
 const FishImageDisplay = ({ fish }: { fish: Fish }) => {
-  const imageUrl = useFishImage(fish.id, fish.imageUrl, fish.commonName, fish.scientificName);
+  const imageSource = useFishImage(fish.id, fish.imageUrl, fish.commonName, fish.scientificName);
   return (
     <Image
-      source={{ uri: imageUrl }}
+      source={imageSource}
       className="w-14 h-14 rounded-xl"
       resizeMode="cover"
     />
@@ -58,10 +59,10 @@ const FishImageDisplay = ({ fish }: { fish: Fish }) => {
 
 // Plant image component with auto-generation
 const PlantImageDisplay = ({ plant }: { plant: Plant }) => {
-  const imageUrl = usePlantImage(plant.id, plant.imageUrl, plant.commonName, plant.scientificName);
+  const imageSource = usePlantImage(plant.id, plant.imageUrl, plant.commonName, plant.scientificName);
   return (
     <Image
-      source={{ uri: imageUrl }}
+      source={imageSource}
       className="w-14 h-14 rounded-xl"
       resizeMode="cover"
     />
@@ -496,7 +497,7 @@ const TankCard = ({
                   {fish.slice(0, 6).map((f) => (
                     <View key={f.id} className="mr-2 items-center">
                       <Image
-                        source={{ uri: f.imageUrl }}
+                        source={getImageSource(f.imageUrl)}
                         className="w-12 h-12 rounded-lg"
                         resizeMode="cover"
                       />
@@ -554,7 +555,7 @@ const TankCard = ({
           {fish.slice(0, 4).map((f, i) => (
             <Image
               key={f.id}
-              source={{ uri: f.imageUrl }}
+              source={getImageSource(f.imageUrl)}
               className="w-10 h-10 rounded-full border-2"
               style={{
                 marginLeft: i > 0 ? -8 : 0,
@@ -780,13 +781,13 @@ const CompatibilityFixSuggestion = ({
     >
       <View className="flex-row items-center mb-2">
         <Image
-          source={{ uri: result.fish1.imageUrl }}
+          source={getImageSource(result.fish1.imageUrl)}
           className="w-8 h-8 rounded-full"
           resizeMode="cover"
         />
         <AlertTriangle size={16} color={statusColor} className="mx-2" />
         <Image
-          source={{ uri: result.fish2.imageUrl }}
+          source={getImageSource(result.fish2.imageUrl)}
           className="w-8 h-8 rounded-full"
           resizeMode="cover"
         />

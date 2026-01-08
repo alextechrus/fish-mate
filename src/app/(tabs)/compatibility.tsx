@@ -36,6 +36,7 @@ import {
 import { generateCompatibilityExplanation } from '@/lib/services/ai-service';
 import { cn } from '@/lib/cn';
 import { useMutation } from '@tanstack/react-query';
+import { getImageSource } from '@/lib/utils/image-source';
 
 const SelectedFishChip = ({
   fish,
@@ -53,7 +54,7 @@ const SelectedFishChip = ({
     )}
   >
     <Image
-      source={{ uri: fish.imageUrl }}
+      source={getImageSource(fish.imageUrl)}
       className="w-6 h-6 rounded-full"
       resizeMode="cover"
     />
@@ -89,7 +90,7 @@ const FishSearchItem = ({
     )}
   >
     <Image
-      source={{ uri: fish.imageUrl }}
+      source={getImageSource(fish.imageUrl)}
       className="w-10 h-10 rounded-lg"
       resizeMode="cover"
     />
@@ -157,7 +158,7 @@ const CompatibilityResultCard = ({
       <View className="flex-row items-center p-4">
         <View className="flex-row items-center flex-1">
           <Image
-            source={{ uri: result.fish1.imageUrl }}
+            source={getImageSource(result.fish1.imageUrl)}
             className="w-10 h-10 rounded-lg"
             resizeMode="cover"
           />
@@ -165,7 +166,7 @@ const CompatibilityResultCard = ({
             <StatusIcon size={20} color={statusConfig.color} />
           </View>
           <Image
-            source={{ uri: result.fish2.imageUrl }}
+            source={getImageSource(result.fish2.imageUrl)}
             className="w-10 h-10 rounded-lg"
             resizeMode="cover"
           />
@@ -617,7 +618,7 @@ export default function CompatibilityScreen() {
                     )}
                   >
                     <Image
-                      source={{ uri: fish.imageUrl }}
+                      source={getImageSource(fish.imageUrl)}
                       className="w-full h-20"
                       resizeMode="cover"
                     />

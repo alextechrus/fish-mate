@@ -21,11 +21,13 @@ export interface PriceRange {
   currency: string;
 }
 
+export type ImageSource = string | number; // string for URLs, number for require() assets
+
 export interface Fish {
   id: string;
   commonName: string;
   scientificName: string;
-  imageUrl: string;
+  imageUrl: ImageSource;
   waterType: WaterType;
   temperament: Temperament;
   minTankSize: number; // gallons

@@ -73,10 +73,10 @@ const tankZoneExplanations: Record<TankZone, { title: string; description: strin
 
 // Fish image component that uses generated images
 const FishImageDisplay = ({ fish, className, style }: { fish: Fish; className?: string; style?: object }) => {
-  const imageUrl = useFishImage(fish.id, fish.imageUrl, fish.commonName, fish.scientificName);
+  const imageSource = useFishImage(fish.id, fish.imageUrl, fish.commonName, fish.scientificName);
   return (
     <Image
-      source={{ uri: imageUrl }}
+      source={imageSource}
       className={className || 'w-12 h-12 rounded-lg'}
       style={style}
       resizeMode="cover"

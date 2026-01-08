@@ -22,6 +22,7 @@ import { useColorScheme } from '@/lib/useColorScheme';
 import { fishDatabase, searchFish, filterFish } from '@/lib/data/fish-database';
 import { Fish, WaterType, Temperament } from '@/lib/types/fish';
 import { cn } from '@/lib/cn';
+import { getImageSource } from '@/lib/utils/image-source';
 
 const FilterChip = ({
   label,
@@ -93,7 +94,7 @@ const FishListItem = ({
       }}
     >
       <Image
-        source={{ uri: fish.imageUrl }}
+        source={getImageSource(fish.imageUrl)}
         className="w-20 h-20 rounded-xl"
         resizeMode="cover"
       />

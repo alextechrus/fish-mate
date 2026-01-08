@@ -32,10 +32,10 @@ import { useFishImage, usePlantImage } from '@/lib/hooks/useImageUrl';
 
 // Fish image component
 const FishImageDisplay = ({ fish }: { fish: Fish }) => {
-  const imageUrl = useFishImage(fish.id, fish.imageUrl, fish.commonName, fish.scientificName);
+  const imageSource = useFishImage(fish.id, fish.imageUrl, fish.commonName, fish.scientificName);
   return (
     <Image
-      source={{ uri: imageUrl }}
+      source={imageSource}
       className="w-16 h-16 rounded-xl"
       resizeMode="cover"
     />
@@ -44,10 +44,10 @@ const FishImageDisplay = ({ fish }: { fish: Fish }) => {
 
 // Plant image component
 const PlantImageDisplay = ({ plant }: { plant: Plant }) => {
-  const imageUrl = usePlantImage(plant.id, plant.imageUrl, plant.commonName, plant.scientificName);
+  const imageSource = usePlantImage(plant.id, plant.imageUrl, plant.commonName, plant.scientificName);
   return (
     <Image
-      source={{ uri: imageUrl }}
+      source={imageSource}
       className="w-16 h-16 rounded-xl"
       resizeMode="cover"
     />

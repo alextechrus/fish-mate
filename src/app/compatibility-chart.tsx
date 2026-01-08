@@ -27,6 +27,7 @@ import { fishDatabase, searchFish, getFishById } from '@/lib/data/fish-database'
 import { Fish } from '@/lib/types/fish';
 import { checkTwoFishCompatibility } from '@/lib/utils/compatibility';
 import { cn } from '@/lib/cn';
+import { getImageSource } from '@/lib/utils/image-source';
 
 const MAX_FISH = 5;
 
@@ -56,7 +57,7 @@ const FishSearchItem = ({
     )}
   >
     <Image
-      source={{ uri: fish.imageUrl }}
+      source={getImageSource(fish.imageUrl)}
       className="w-10 h-10 rounded-lg"
       resizeMode="cover"
     />
@@ -217,7 +218,7 @@ const CompatibilityMatrix = ({
                 className="items-center justify-center p-1"
               >
                 <Image
-                  source={{ uri: fish.imageUrl }}
+                  source={getImageSource(fish.imageUrl)}
                   style={{ width: cellSize - 8, height: cellSize - 8, borderRadius: 8 }}
                   resizeMode="cover"
                 />
@@ -234,7 +235,7 @@ const CompatibilityMatrix = ({
                 className="items-center justify-center p-1"
               >
                 <Image
-                  source={{ uri: rowFish.imageUrl }}
+                  source={getImageSource(rowFish.imageUrl)}
                   style={{ width: headerCellSize - 8, height: cellSize - 8, borderRadius: 8 }}
                   resizeMode="cover"
                 />
@@ -336,7 +337,7 @@ const CompatibilityDetailModal = ({
         {/* Header with fish images */}
         <View className={cn('p-4 flex-row items-center justify-center', config.bg)}>
           <Image
-            source={{ uri: cell.fish1.imageUrl }}
+            source={getImageSource(cell.fish1.imageUrl)}
             className="w-16 h-16 rounded-xl"
             resizeMode="cover"
           />
@@ -350,7 +351,7 @@ const CompatibilityDetailModal = ({
             </Text>
           </View>
           <Image
-            source={{ uri: cell.fish2.imageUrl }}
+            source={getImageSource(cell.fish2.imageUrl)}
             className="w-16 h-16 rounded-xl"
             resizeMode="cover"
           />
@@ -553,7 +554,7 @@ export default function CompatibilityChartScreen() {
                   style={{ width: 80 }}
                 >
                   <Image
-                    source={{ uri: fish.imageUrl }}
+                    source={getImageSource(fish.imageUrl)}
                     className="w-full h-16"
                     resizeMode="cover"
                   />

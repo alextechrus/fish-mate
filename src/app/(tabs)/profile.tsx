@@ -45,6 +45,7 @@ import { checkMultipleFishCompatibility } from '@/lib/utils/compatibility';
 import { getFishById } from '@/lib/data/fish-database';
 import { TankSetup } from '@/lib/types/fish';
 import { cn } from '@/lib/cn';
+import { getImageSource } from '@/lib/utils/image-source';
 
 const APP_VERSION = '1.0.0';
 
@@ -259,7 +260,7 @@ const SharedTankCard = ({
         {fish.slice(0, 4).map((f, i) => (
           <Image
             key={i}
-            source={{ uri: f?.imageUrl }}
+            source={getImageSource(f?.imageUrl)}
             className="w-8 h-8 rounded-full -mr-2 border-2"
             style={{ borderColor: isDark ? '#1E293B' : '#FFFFFF' }}
           />

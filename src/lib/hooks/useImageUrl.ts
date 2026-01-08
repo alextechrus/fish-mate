@@ -4,81 +4,82 @@
 
 import { ImageSourcePropType } from 'react-native';
 import { fishImages, plantImages } from '../data/species-images';
-
-// Type for image source that can be either a require() number or a URI object
-export type ImageSource = number | { uri: string };
+import { ImageSource } from '../types/fish';
 
 /**
  * Get the image source for a fish species
- * Uses AI-generated images when available, falls back to provided URL
- * Returns an ImageSource that can be used directly with Image component
+ * Uses AI-generated images when available, falls back to provided URL/asset
+ * Returns an ImageSourcePropType that can be used directly with Image component
  */
 export function useFishImageSource(
   fishId: string,
-  fallbackUrl: string,
+  fallbackUrl: ImageSource,
   commonName?: string,
   scientificName?: string
-): ImageSource {
+): ImageSourcePropType {
   // Check if we have a generated image for this fish
   const generatedImage = fishImages[fishId];
   if (generatedImage) {
     return generatedImage;
   }
 
-  // Fall back to the original URL
+  // Handle fallback - could be a require() number or a URL string
+  if (typeof fallbackUrl === 'number') {
+    return fallbackUrl;
+  }
   return { uri: fallbackUrl };
 }
 
 /**
  * Get the image source for a plant species
- * Uses AI-generated images when available, falls back to provided URL
- * Returns an ImageSource that can be used directly with Image component
+ * Uses AI-generated images when available, falls back to provided URL/asset
+ * Returns an ImageSourcePropType that can be used directly with Image component
  */
 export function usePlantImageSource(
   plantId: string,
-  fallbackUrl: string,
+  fallbackUrl: ImageSource,
   commonName?: string,
   scientificName?: string
-): ImageSource {
+): ImageSourcePropType {
   // Check if we have a generated image for this plant
   const generatedImage = plantImages[plantId];
   if (generatedImage) {
     return generatedImage;
   }
 
-  // Fall back to the original URL
+  // Handle fallback - could be a require() number or a URL string
+  if (typeof fallbackUrl === 'number') {
+    return fallbackUrl;
+  }
   return { uri: fallbackUrl };
 }
 
 /**
- * Legacy function - returns URL string only (for backwards compatibility)
- * Only returns generated image URL if it's a string, otherwise fallback
+ * Legacy function - maintained for backwards compatibility but now handles both types
+ * Returns ImageSourcePropType that can be used directly with Image component
+ * @deprecated Use useFishImageSource instead
  */
 export function useFishImage(
   fishId: string,
-  fallbackUrl: string,
+  fallbackUrl: ImageSource,
   commonName?: string,
   scientificName?: string
-): string {
-  // For backwards compatibility, just return the fallback URL
-  // The new AI images use require() which returns a number
-  // Components should migrate to useFishImageSource
-  return fallbackUrl;
+): ImageSourcePropType {
+  return useFishImageSource(fishId, fallbackUrl, commonName, scientificName);
 }
 
 /**
- * Legacy function - returns URL string only (for backwards compatibility)
- * Only returns generated image URL if it's a string, otherwise fallback
+ * Legacy function - maintained for backwards compatibility but now handles both types
+ * Returns ImageSourcePropType that can be used directly with Image component
+ * @deprecated Use usePlantImageSource instead
  */
 export function usePlantImage(
   plantId: string,
-  fallbackUrl: string,
+  fallbackUrl: ImageSource,
   commonName?: string,
   scientificName?: string
-): string {
-  // For backwards compatibility, just return the fallback URL
-  // Components should migrate to usePlantImageSource
-  return fallbackUrl;
+): ImageSourcePropType {
+  return usePlantImageSource(plantId, fallbackUrl, commonName, scientificName);
 }
 
 /**

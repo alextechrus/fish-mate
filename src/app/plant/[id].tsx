@@ -372,13 +372,13 @@ const CollapsibleInfoRow = ({
 // Separate component for fish image to handle hook properly
 const FishImageDisplay = ({ fishId }: { fishId: string }) => {
   const fish = getFishById(fishId);
-  const imageUrl = useFishImage(fishId, fish?.imageUrl || '');
+  const imageSource = useFishImage(fishId, fish?.imageUrl || '');
 
   if (!fish) return null;
 
   return (
     <Image
-      source={{ uri: imageUrl }}
+      source={imageSource}
       className="w-12 h-12 rounded-lg"
       resizeMode="cover"
     />
@@ -558,7 +558,7 @@ export default function PlantProfileScreen() {
   const plant = getPlantById(id || '');
 
   // Call hook unconditionally with fallback - pass name for auto-generation
-  const imageUrl = usePlantImage(
+  const imageSource = usePlantImage(
     id || '',
     plant?.imageUrl || '',
     plant?.commonName,
@@ -636,7 +636,7 @@ export default function PlantProfileScreen() {
         {/* Hero Image */}
         <View className="relative">
           <Image
-            source={{ uri: imageUrl }}
+            source={imageSource}
             className="w-full h-64"
             resizeMode="cover"
           />
