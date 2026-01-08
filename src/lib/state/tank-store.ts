@@ -39,16 +39,20 @@ interface TankState {
   tanks: ExtendedTankSetup[];
   activeTankId: string | null;
   selectedTankId: string | null; // For focused view
+  favoriteTankId: string | null; // Only one tank can be favorite
   addTank: (name: string, size: number, waterType: WaterType) => string;
   removeTank: (id: string) => void;
   updateTank: (id: string, updates: Partial<ExtendedTankSetup>) => void;
+  renameTank: (id: string, newName: string) => void;
   addFishToTank: (tankId: string, fishId: string, fishName?: string) => void;
   removeFishFromTank: (tankId: string, fishId: string, fishName?: string) => void;
   addPlantToTank: (tankId: string, plantId: string, plantName?: string) => void;
   removePlantFromTank: (tankId: string, plantId: string, plantName?: string) => void;
   setActiveTank: (id: string | null) => void;
   setSelectedTank: (id: string | null) => void;
+  setFavoriteTank: (id: string | null) => void;
   getActiveTank: () => ExtendedTankSetup | undefined;
+  getSortedTanks: () => ExtendedTankSetup[]; // Returns tanks with favorite first
   addActivity: (tankId: string, activity: Omit<TankActivity, 'id' | 'timestamp'>) => void;
   setWaterChangeReminder: (tankId: string, reminder: WaterChangeReminder) => void;
   logWaterChange: (tankId: string) => void;
@@ -60,6 +64,7 @@ export const useTankStore = create<TankState>()(
       tanks: [],
       activeTankId: null,
       selectedTankId: null,
+      favoriteTankId: null,
 
       addTank: (name, size, waterType) => {
         const id = `tank-${Date.now()}`;
@@ -97,6 +102,14 @@ export const useTankStore = create<TankState>()(
         set(state => ({
           tanks: state.tanks.map(t =>
             t.id === id ? { ...t, ...updates } : t
+          ),
+        }));
+      },
+
+      renameTank: (id, newName) => {
+        set(state => ({
+          tanks: state.tanks.map(t =>
+            t.id === id ? { ...t, name: newName } : t
           ),
         }));
       },
@@ -189,9 +202,22 @@ export const useTankStore = create<TankState>()(
         set({ selectedTankId: id });
       },
 
+      setFavoriteTank: (id) => {
+        set({ favoriteTankId: id });
+      },
+
       getActiveTank: () => {
         const state = get();
         return state.tanks.find(t => t.id === state.activeTankId);
+      },
+
+      getSortedTanks: () => {
+        const state = get();
+        const { tanks, favoriteTankId } = state;
+        if (!favoriteTankId) return tanks;
+        const favorite = tanks.find(t => t.id === favoriteTankId);
+        const others = tanks.filter(t => t.id !== favoriteTankId);
+        return favorite ? [favorite, ...others] : tanks;
       },
 
       addActivity: (tankId, activity) => {

@@ -101,13 +101,16 @@ Each plant has a dedicated profile page with:
 ### My Tank
 - Create multiple tank profiles
 - Set tank name, size, and water type
+- **Rename tanks** - Tap pencil icon to edit tank name
+- **Favorite tanks** - Star your favorite tank (only one allowed), shows at top of list
+- **Tank selection** - Tap to select and see quick preview, tap info button for full details
 - Add/remove fish from tanks
 - Add/remove plants from tanks
 - Real-time compatibility monitoring
 - Overstocking warnings
 - Quick access to fish and plant profiles
 - Tank cost breakdown in GBP (£)
-- **Tap any tank to view detailed tank page**:
+- **Tap info icon on any tank to view detailed tank page**:
   - Enlarged focused view of the tank
   - Fish and plants displayed in horizontal scrollable cards
   - **Water change reminder scheduling**:
@@ -121,6 +124,16 @@ Each plant has a dedicated profile page with:
     - View water change history
     - Reminder changes logged
 
+### Add to Tank (NEW)
+- **Smart fish/plant adding** - Shows compatible species first
+- **Compatibility sorting**:
+  - Compatible fish shown at top (green indicator)
+  - Caution fish in middle (yellow indicator)
+  - Incompatible fish at bottom (red indicator)
+- **Multi-select mode** - Toggle to add multiple fish/plants at once
+- **Visual selection** - Checkmarks show selected items
+- **One-tap add** - Add all selected items with single button
+
 ### Settings
 - User authentication (sign in/sign out)
 - **Preferences**:
@@ -132,8 +145,6 @@ Each plant has a dedicated profile page with:
   - Rate the app in App Store
   - Report a bug via email
   - Send feedback via email
-- **Admin Tools**:
-  - AI Image Generator - Create aquarium images for all species
 - **Legal**:
   - Privacy Policy
   - Terms of Service
@@ -160,9 +171,10 @@ src/
 │   │   ├── search.tsx     # Combined fish & plant search
 │   │   ├── my-tank.tsx    # Tank management
 │   │   └── profile.tsx    # User profile & settings
-│   ├── admin/             # Admin tools
-│   │   └── generate-images.tsx  # AI image generation
 │   ├── fish/[id].tsx      # Fish profile screen
+│   ├── plant/[id].tsx     # Plant profile screen
+│   ├── tank/[id].tsx      # Tank detail screen
+│   ├── add-to-tank.tsx    # Smart fish/plant adding page
 │   ├── compatibility-chart.tsx  # Fish compatibility matrix
 │   ├── auth/              # Authentication screens
 │   └── _layout.tsx        # Root layout

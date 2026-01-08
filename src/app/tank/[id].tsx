@@ -577,7 +577,7 @@ export default function TankDetailScreen() {
                 </Text>
               </View>
               <Pressable
-                onPress={() => router.push('/(tabs)/search')}
+                onPress={() => router.push(`/add-to-tank?tankId=${tank.id}&mode=fish`)}
                 className="flex-row items-center bg-sky-500 px-3 py-1.5 rounded-full"
               >
                 <Plus size={14} color="white" />
@@ -647,7 +647,7 @@ export default function TankDetailScreen() {
                 </Text>
               </View>
               <Pressable
-                onPress={() => router.push('/(tabs)/search')}
+                onPress={() => router.push(`/add-to-tank?tankId=${tank.id}&mode=plants`)}
                 className="flex-row items-center bg-emerald-500 px-3 py-1.5 rounded-full"
               >
                 <Plus size={14} color="white" />
