@@ -7,6 +7,10 @@ import {
   Image,
   TextInput,
   Modal,
+  KeyboardAvoidingView,
+  TouchableWithoutFeedback,
+  Keyboard,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -90,153 +94,160 @@ const CreateTankModal = ({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide">
-      <View className="flex-1 justify-end bg-black/50">
-        <View
-          className={cn(
-            'rounded-t-3xl p-6',
-            isDark ? 'bg-slate-800' : 'bg-white'
-          )}
-        >
-          <View className="flex-row justify-between items-center mb-6">
-            <Text
-              className={cn(
-                'text-xl font-bold',
-                isDark ? 'text-white' : 'text-slate-900'
-              )}
-            >
-              Create New Tank
-            </Text>
-            <Pressable onPress={onClose}>
-              <X size={24} color={isDark ? '#94A3B8' : '#64748B'} />
-            </Pressable>
-          </View>
-
-          {/* Tank Name */}
-          <Text
-            className={cn(
-              'text-sm font-semibold mb-2',
-              isDark ? 'text-slate-300' : 'text-slate-600'
-            )}
+    <Modal visible={visible} transparent animationType="fade">
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <View className="flex-1 bg-black/50">
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            className="flex-1 justify-start pt-20"
           >
-            Tank Name
-          </Text>
-          <TextInput
-            value={name}
-            onChangeText={setName}
-            placeholder="My Aquarium"
-            placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
-            style={{
-              paddingHorizontal: 16,
-              paddingVertical: 12,
-              borderRadius: 12,
-              fontSize: 16,
-              marginBottom: 16,
-              backgroundColor: isDark ? '#334155' : '#F1F5F9',
-              color: isDark ? '#FFFFFF' : '#0F172A',
-            }}
-          />
-
-          {/* Tank Size */}
-          <Text
-            className={cn(
-              'text-sm font-semibold mb-2',
-              isDark ? 'text-slate-300' : 'text-slate-600'
-            )}
-          >
-            Tank Size (Gallons)
-          </Text>
-          <TextInput
-            value={size}
-            onChangeText={setSize}
-            placeholder="20"
-            placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
-            keyboardType="numeric"
-            style={{
-              paddingHorizontal: 16,
-              paddingVertical: 12,
-              borderRadius: 12,
-              fontSize: 16,
-              marginBottom: 16,
-              backgroundColor: isDark ? '#334155' : '#F1F5F9',
-              color: isDark ? '#FFFFFF' : '#0F172A',
-            }}
-          />
-
-          {/* Water Type */}
-          <Text
-            className={cn(
-              'text-sm font-semibold mb-2',
-              isDark ? 'text-slate-300' : 'text-slate-600'
-            )}
-          >
-            Water Type
-          </Text>
-          <View className="flex-row mb-6">
-            <Pressable
-              onPress={() => setWaterType('freshwater')}
-              className={cn(
-                'flex-1 py-3 rounded-xl mr-2 items-center',
-                waterType === 'freshwater'
-                  ? 'bg-sky-500'
-                  : isDark
-                  ? 'bg-slate-700'
-                  : 'bg-slate-100'
-              )}
-            >
-              <Text
+            <TouchableWithoutFeedback>
+              <View
                 className={cn(
-                  'font-semibold',
-                  waterType === 'freshwater'
-                    ? 'text-white'
-                    : isDark
-                    ? 'text-slate-300'
-                    : 'text-slate-600'
+                  'mx-4 rounded-3xl p-6',
+                  isDark ? 'bg-slate-800' : 'bg-white'
                 )}
               >
-                Freshwater
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={() => setWaterType('saltwater')}
-              className={cn(
-                'flex-1 py-3 rounded-xl items-center',
-                waterType === 'saltwater'
-                  ? 'bg-sky-500'
-                  : isDark
-                  ? 'bg-slate-700'
-                  : 'bg-slate-100'
-              )}
-            >
-              <Text
-                className={cn(
-                  'font-semibold',
-                  waterType === 'saltwater'
-                    ? 'text-white'
-                    : isDark
-                    ? 'text-slate-300'
-                    : 'text-slate-600'
-                )}
-              >
-                Saltwater
-              </Text>
-            </Pressable>
-          </View>
+                <View className="flex-row justify-between items-center mb-6">
+                  <Text
+                    className={cn(
+                      'text-xl font-bold',
+                      isDark ? 'text-white' : 'text-slate-900'
+                    )}
+                  >
+                    Create New Tank
+                  </Text>
+                  <Pressable onPress={onClose}>
+                    <X size={24} color={isDark ? '#94A3B8' : '#64748B'} />
+                  </Pressable>
+                </View>
 
-          <Pressable
-            onPress={handleSubmit}
-            disabled={!name.trim() || !size}
-            className={cn(
-              'py-4 rounded-xl items-center',
-              name.trim() && size ? 'bg-sky-500' : 'bg-slate-400'
-            )}
-          >
-            <Text className="text-white font-bold text-base">Create Tank</Text>
-          </Pressable>
+                {/* Tank Name */}
+                <Text
+                  className={cn(
+                    'text-sm font-semibold mb-2',
+                    isDark ? 'text-slate-300' : 'text-slate-600'
+                  )}
+                >
+                  Tank Name
+                </Text>
+                <TextInput
+                  value={name}
+                  onChangeText={setName}
+                  placeholder="My Aquarium"
+                  placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
+                  style={{
+                    paddingHorizontal: 16,
+                    paddingVertical: 12,
+                    borderRadius: 12,
+                    fontSize: 16,
+                    marginBottom: 16,
+                    backgroundColor: isDark ? '#334155' : '#F1F5F9',
+                    color: isDark ? '#FFFFFF' : '#0F172A',
+                  }}
+                />
 
-          <View className="h-8" />
+                {/* Tank Size */}
+                <Text
+                  className={cn(
+                    'text-sm font-semibold mb-2',
+                    isDark ? 'text-slate-300' : 'text-slate-600'
+                  )}
+                >
+                  Tank Size (Gallons)
+                </Text>
+                <TextInput
+                  value={size}
+                  onChangeText={setSize}
+                  placeholder="20"
+                  placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
+                  keyboardType="numeric"
+                  style={{
+                    paddingHorizontal: 16,
+                    paddingVertical: 12,
+                    borderRadius: 12,
+                    fontSize: 16,
+                    marginBottom: 16,
+                    backgroundColor: isDark ? '#334155' : '#F1F5F9',
+                    color: isDark ? '#FFFFFF' : '#0F172A',
+                  }}
+                />
+
+                {/* Water Type */}
+                <Text
+                  className={cn(
+                    'text-sm font-semibold mb-2',
+                    isDark ? 'text-slate-300' : 'text-slate-600'
+                  )}
+                >
+                  Water Type
+                </Text>
+                <View className="flex-row mb-6">
+                  <Pressable
+                    onPress={() => setWaterType('freshwater')}
+                    className={cn(
+                      'flex-1 py-3 rounded-xl mr-2 items-center',
+                      waterType === 'freshwater'
+                        ? 'bg-sky-500'
+                        : isDark
+                        ? 'bg-slate-700'
+                        : 'bg-slate-100'
+                    )}
+                  >
+                    <Text
+                      className={cn(
+                        'font-semibold',
+                        waterType === 'freshwater'
+                          ? 'text-white'
+                          : isDark
+                          ? 'text-slate-300'
+                          : 'text-slate-600'
+                      )}
+                    >
+                      Freshwater
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => setWaterType('saltwater')}
+                    className={cn(
+                      'flex-1 py-3 rounded-xl items-center',
+                      waterType === 'saltwater'
+                        ? 'bg-sky-500'
+                        : isDark
+                        ? 'bg-slate-700'
+                        : 'bg-slate-100'
+                    )}
+                  >
+                    <Text
+                      className={cn(
+                        'font-semibold',
+                        waterType === 'saltwater'
+                          ? 'text-white'
+                          : isDark
+                          ? 'text-slate-300'
+                          : 'text-slate-600'
+                      )}
+                    >
+                      Saltwater
+                    </Text>
+                  </Pressable>
+                </View>
+
+                <Pressable
+                  onPress={handleSubmit}
+                  disabled={!name.trim() || !size}
+                  className={cn(
+                    'py-4 rounded-xl items-center',
+                    name.trim() && size ? 'bg-sky-500' : 'bg-slate-400'
+                  )}
+                >
+                  <Text className="text-white font-bold text-base">Create Tank</Text>
+                </Pressable>
+              </View>
+            </TouchableWithoutFeedback>
+          </KeyboardAvoidingView>
         </View>
-      </View>
+      </TouchableWithoutFeedback>
     </Modal>
   );
 };
@@ -257,6 +268,11 @@ const RenameTankModal = ({
 }) => {
   const [name, setName] = useState(currentName);
 
+  // Reset name when currentName changes (modal opens with new tank)
+  React.useEffect(() => {
+    setName(currentName);
+  }, [currentName]);
+
   const handleSubmit = () => {
     if (name.trim()) {
       onSubmit(name.trim());
@@ -265,67 +281,74 @@ const RenameTankModal = ({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide">
-      <View className="flex-1 justify-end bg-black/50">
-        <View
-          className={cn(
-            'rounded-t-3xl p-6',
-            isDark ? 'bg-slate-800' : 'bg-white'
-          )}
-        >
-          <View className="flex-row justify-between items-center mb-6">
-            <Text
-              className={cn(
-                'text-xl font-bold',
-                isDark ? 'text-white' : 'text-slate-900'
-              )}
-            >
-              Rename Tank
-            </Text>
-            <Pressable onPress={onClose}>
-              <X size={24} color={isDark ? '#94A3B8' : '#64748B'} />
-            </Pressable>
-          </View>
-
-          <Text
-            className={cn(
-              'text-sm font-semibold mb-2',
-              isDark ? 'text-slate-300' : 'text-slate-600'
-            )}
+    <Modal visible={visible} transparent animationType="fade">
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <View className="flex-1 bg-black/50">
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            className="flex-1 justify-start pt-20"
           >
-            Tank Name
-          </Text>
-          <TextInput
-            value={name}
-            onChangeText={setName}
-            placeholder="My Aquarium"
-            placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
-            autoFocus
-            style={{
-              paddingHorizontal: 16,
-              paddingVertical: 12,
-              borderRadius: 12,
-              fontSize: 16,
-              marginBottom: 24,
-              backgroundColor: isDark ? '#334155' : '#F1F5F9',
-              color: isDark ? '#FFFFFF' : '#0F172A',
-            }}
-          />
+            <TouchableWithoutFeedback>
+              <View
+                className={cn(
+                  'mx-4 rounded-3xl p-6',
+                  isDark ? 'bg-slate-800' : 'bg-white'
+                )}
+              >
+                <View className="flex-row justify-between items-center mb-6">
+                  <Text
+                    className={cn(
+                      'text-xl font-bold',
+                      isDark ? 'text-white' : 'text-slate-900'
+                    )}
+                  >
+                    Rename Tank
+                  </Text>
+                  <Pressable onPress={onClose}>
+                    <X size={24} color={isDark ? '#94A3B8' : '#64748B'} />
+                  </Pressable>
+                </View>
 
-          <Pressable
-            onPress={handleSubmit}
-            disabled={!name.trim()}
-            className={cn(
-              'py-4 rounded-xl items-center',
-              name.trim() ? 'bg-sky-500' : 'bg-slate-400'
-            )}
-          >
-            <Text className="text-white font-bold text-base">Save</Text>
-          </Pressable>
+                <Text
+                  className={cn(
+                    'text-sm font-semibold mb-2',
+                    isDark ? 'text-slate-300' : 'text-slate-600'
+                  )}
+                >
+                  Tank Name
+                </Text>
+                <TextInput
+                  value={name}
+                  onChangeText={setName}
+                  placeholder="My Aquarium"
+                  placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
+                  autoFocus
+                  style={{
+                    paddingHorizontal: 16,
+                    paddingVertical: 12,
+                    borderRadius: 12,
+                    fontSize: 16,
+                    marginBottom: 24,
+                    backgroundColor: isDark ? '#334155' : '#F1F5F9',
+                    color: isDark ? '#FFFFFF' : '#0F172A',
+                  }}
+                />
 
-          <View className="h-8" />
+                <Pressable
+                  onPress={handleSubmit}
+                  disabled={!name.trim()}
+                  className={cn(
+                    'py-4 rounded-xl items-center',
+                    name.trim() ? 'bg-sky-500' : 'bg-slate-400'
+                  )}
+                >
+                  <Text className="text-white font-bold text-base">Save</Text>
+                </Pressable>
+              </View>
+            </TouchableWithoutFeedback>
+          </KeyboardAvoidingView>
         </View>
-      </View>
+      </TouchableWithoutFeedback>
     </Modal>
   );
 };
