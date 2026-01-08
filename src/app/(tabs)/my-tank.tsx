@@ -17,7 +17,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import Animated, { FadeIn, FadeOut, useAnimatedStyle, withSpring, useSharedValue } from 'react-native-reanimated';
 import {
-  Anchor,
+  Container,
   Plus,
   Trash2,
   Fish as FishIcon,
@@ -947,6 +947,8 @@ export default function MyTankScreen() {
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showRenameModal, setShowRenameModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletingTankId, setDeletingTankId] = useState<string | null>(null);
   const [selectedTankId, setSelectedTankId] = useState<string | null>(null);
   const [renamingTankId, setRenamingTankId] = useState<string | null>(null);
 
@@ -968,6 +970,20 @@ export default function MyTankScreen() {
   const activeTank = tanks.find((t) => t.id === activeTankId);
   const selectedTank = tanks.find((t) => t.id === selectedTankId);
   const renamingTank = tanks.find((t) => t.id === renamingTankId);
+  const deletingTank = tanks.find((t) => t.id === deletingTankId);
+
+  const handleDeleteTank = (tankId: string) => {
+    setDeletingTankId(tankId);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteTank = () => {
+    if (deletingTankId) {
+      removeTank(deletingTankId);
+      setShowDeleteModal(false);
+      setDeletingTankId(null);
+    }
+  };
 
   const activeTankFish = useMemo(() => {
     return activeTank?.fishIds
@@ -1018,7 +1034,7 @@ export default function MyTankScreen() {
         >
           <View className="flex-row items-center justify-between">
             <View className="flex-row items-center">
-              <Anchor size={24} color="white" />
+              <Container size={24} color="white" />
               <Text className="text-white text-2xl font-bold ml-2">My Tank</Text>
             </View>
             <Pressable
@@ -1100,7 +1116,7 @@ export default function MyTankScreen() {
                       setActiveTank(tank.id);
                     }
                   }}
-                  onDelete={() => removeTank(tank.id)}
+                  onDelete={() => handleDeleteTank(tank.id)}
                   onViewDetails={() => router.push(`/tank/${tank.id}`)}
                   onToggleFavorite={() => {
                     if (favoriteTankId === tank.id) {
@@ -1288,6 +1304,77 @@ export default function MyTankScreen() {
           currentName={renamingTank?.name || ''}
           isDark={isDark}
         />
+
+        {/* Delete Confirmation Modal */}
+        <Modal
+          visible={showDeleteModal}
+          transparent
+          animationType="fade"
+          onRequestClose={() => {
+            setShowDeleteModal(false);
+            setDeletingTankId(null);
+          }}
+        >
+          <View className="flex-1 bg-black/50 justify-center items-center px-6">
+            <View
+              className={cn(
+                'w-full max-w-sm rounded-2xl p-6',
+                isDark ? 'bg-slate-800' : 'bg-white'
+              )}
+            >
+              <View className="items-center mb-4">
+                <View className="w-16 h-16 rounded-full bg-red-500/20 items-center justify-center mb-4">
+                  <Trash2 size={32} color="#EF4444" />
+                </View>
+                <Text
+                  className={cn(
+                    'text-xl font-bold text-center',
+                    isDark ? 'text-white' : 'text-slate-900'
+                  )}
+                >
+                  Delete Tank?
+                </Text>
+              </View>
+              <Text
+                className={cn(
+                  'text-center mb-6',
+                  isDark ? 'text-slate-400' : 'text-slate-600'
+                )}
+              >
+                Are you sure you want to delete "{deletingTank?.name}"? This action cannot be undone.
+              </Text>
+              <View className="flex-row gap-3">
+                <Pressable
+                  onPress={() => {
+                    setShowDeleteModal(false);
+                    setDeletingTankId(null);
+                  }}
+                  className={cn(
+                    'flex-1 py-3 rounded-xl',
+                    isDark ? 'bg-slate-700' : 'bg-slate-100'
+                  )}
+                >
+                  <Text
+                    className={cn(
+                      'text-center font-semibold',
+                      isDark ? 'text-white' : 'text-slate-900'
+                    )}
+                  >
+                    Cancel
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={confirmDeleteTank}
+                  className="flex-1 py-3 rounded-xl bg-red-500"
+                >
+                  <Text className="text-center font-semibold text-white">
+                    Delete
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </SafeAreaView>
     </View>
   );
