@@ -99,7 +99,7 @@ const CreateTankModal = ({
         <View className="flex-1 bg-black/50">
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            className="flex-1 justify-start pt-20"
+            className="flex-1 justify-center pb-32"
           >
             <TouchableWithoutFeedback>
               <View
@@ -286,7 +286,7 @@ const RenameTankModal = ({
         <View className="flex-1 bg-black/50">
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            className="flex-1 justify-start pt-20"
+            className="flex-1 justify-center pb-32"
           >
             <TouchableWithoutFeedback>
               <View
