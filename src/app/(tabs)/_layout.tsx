@@ -1,6 +1,6 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { Home, Search, FishSymbol, Settings } from 'lucide-react-native';
+import { Home, Search, Container, Settings } from 'lucide-react-native';
 import { useColorScheme } from '@/lib/useColorScheme';
 
 export default function TabLayout() {
@@ -46,7 +46,7 @@ export default function TabLayout() {
         name="my-tank"
         options={{
           title: 'My Tank',
-          tabBarIcon: ({ color, size }) => <FishSymbol size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => <Container size={size} color={color} />,
         }}
       />
       <Tabs.Screen

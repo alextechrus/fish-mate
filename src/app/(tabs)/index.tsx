@@ -3,7 +3,7 @@ import { View, Text, ScrollView, Pressable, Image, Dimensions } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { Fish as FishIcon, Droplets, Sparkles, ChevronRight, Shell, Leaf, Search, Lightbulb, ThermometerSnowflake, FlaskConical, Heart, Zap, Grid3X3, FishSymbol } from 'lucide-react-native';
+import { Fish as FishIcon, Droplets, Sparkles, ChevronRight, Shell, Leaf, Search, Lightbulb, ThermometerSnowflake, FlaskConical, Heart, Zap, Grid3X3, Container } from 'lucide-react-native';
 import { useColorScheme } from '@/lib/useColorScheme';
 import { fishDatabase, getBeginnerFriendlyFish, getFreshwaterFish, getSaltwaterFish } from '@/lib/data/fish-database';
 import { plantDatabase, getEasyPlants } from '@/lib/data/plant-database';
@@ -432,7 +432,7 @@ export default function HomeScreen() {
                 onPress={() => router.push('/(tabs)/search')}
               />
               <QuickActionCard
-                icon={FishSymbol}
+                icon={Container}
                 title="My Tank"
                 subtitle="Manage your tank"
                 colors={['#10B981', '#059669']}
