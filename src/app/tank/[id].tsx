@@ -727,8 +727,8 @@ export default function TankDetailScreen() {
                   No activity yet
                 </Text>
               ) : (
-                activities.map((activity) => (
-                  <ActivityItem key={activity.id} activity={activity} isDark={isDark} />
+                activities.map((activity, index) => (
+                  <ActivityItem key={`${activity.id}-${index}`} activity={activity} isDark={isDark} />
                 ))
               )}
             </View>

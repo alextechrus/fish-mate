@@ -77,7 +77,7 @@ export const useTankStore = create<TankState>()(
           plantIds: [],
           createdAt: new Date(),
           activities: [{
-            id: `activity-${Date.now()}`,
+            id: `activity-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
             type: 'created',
             description: `Tank "${name}" was created`,
             timestamp: new Date(),
@@ -119,7 +119,7 @@ export const useTankStore = create<TankState>()(
           tanks: state.tanks.map(t => {
             if (t.id !== tankId) return t;
             const activity: TankActivity = {
-              id: `activity-${Date.now()}`,
+              id: `activity-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
               type: 'fish_added',
               description: fishName ? `Added ${fishName}` : 'Added a fish',
               timestamp: new Date(),
@@ -139,7 +139,7 @@ export const useTankStore = create<TankState>()(
           tanks: state.tanks.map(t => {
             if (t.id !== tankId) return t;
             const activity: TankActivity = {
-              id: `activity-${Date.now()}`,
+              id: `activity-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
               type: 'fish_removed',
               description: fishName ? `Removed ${fishName}` : 'Removed a fish',
               timestamp: new Date(),
@@ -159,7 +159,7 @@ export const useTankStore = create<TankState>()(
           tanks: state.tanks.map(t => {
             if (t.id !== tankId) return t;
             const activity: TankActivity = {
-              id: `activity-${Date.now()}`,
+              id: `activity-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
               type: 'plant_added',
               description: plantName ? `Added ${plantName}` : 'Added a plant',
               timestamp: new Date(),
@@ -179,7 +179,7 @@ export const useTankStore = create<TankState>()(
           tanks: state.tanks.map(t => {
             if (t.id !== tankId) return t;
             const activity: TankActivity = {
-              id: `activity-${Date.now()}`,
+              id: `activity-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
               type: 'plant_removed',
               description: plantName ? `Removed ${plantName}` : 'Removed a plant',
               timestamp: new Date(),
@@ -226,7 +226,7 @@ export const useTankStore = create<TankState>()(
             if (t.id !== tankId) return t;
             const newActivity: TankActivity = {
               ...activity,
-              id: `activity-${Date.now()}`,
+              id: `activity-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
               timestamp: new Date(),
             };
             return {
@@ -242,7 +242,7 @@ export const useTankStore = create<TankState>()(
           tanks: state.tanks.map(t => {
             if (t.id !== tankId) return t;
             const activity: TankActivity = {
-              id: `activity-${Date.now()}`,
+              id: `activity-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
               type: 'reminder_set',
               description: reminder.enabled
                 ? `Water change reminder set for ${reminder.frequency}`
@@ -263,7 +263,7 @@ export const useTankStore = create<TankState>()(
           tanks: state.tanks.map(t => {
             if (t.id !== tankId) return t;
             const activity: TankActivity = {
-              id: `activity-${Date.now()}`,
+              id: `activity-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
               type: 'water_change',
               description: 'Performed water change',
               timestamp: new Date(),
