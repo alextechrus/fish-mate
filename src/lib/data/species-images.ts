@@ -13,7 +13,8 @@ export interface SpeciesImage {
 
 // Pre-generated AI images for fish species
 // These images show each fish in a planted aquarium setting
-export const fishImages: Record<string, string> = {
+// Using asset require for local images
+export const fishImages: Record<string, number> = {
   'neon-tetra': require('../../../assets/images/species/fish-neon-tetra.png'),
   'cardinal-tetra': require('../../../assets/images/species/fish-cardinal-tetra.png'),
   'guppy': require('../../../assets/images/species/fish-guppy.png'),
@@ -38,24 +39,28 @@ export const fishImages: Record<string, string> = {
 
 // Pre-generated AI images for plant species
 // These images show each plant in an aquarium setting
-export const plantImages: Record<string, string> = {
+export const plantImages: Record<string, number> = {
   // Images will be populated after generation
 };
 
 /**
- * Get the image URL for a fish species
- * Falls back to a placeholder if not yet generated
+ * Get the image source for a fish species
+ * Returns require() result for local images or fallback URL
  */
-export function getFishImageUrl(fishId: string, fallbackUrl?: string): string {
-  return fishImages[fishId] || fallbackUrl || getPlaceholderImage('fish');
+export function getFishImageSource(fishId: string, fallbackUrl?: string): number | { uri: string } {
+  const localImage = fishImages[fishId];
+  if (localImage) return localImage;
+  return { uri: fallbackUrl || getPlaceholderImage('fish') };
 }
 
 /**
- * Get the image URL for a plant species
- * Falls back to a placeholder if not yet generated
+ * Get the image source for a plant species
+ * Returns require() result for local images or fallback URL
  */
-export function getPlantImageUrl(plantId: string, fallbackUrl?: string): string {
-  return plantImages[plantId] || fallbackUrl || getPlaceholderImage('plant');
+export function getPlantImageSource(plantId: string, fallbackUrl?: string): number | { uri: string } {
+  const localImage = plantImages[plantId];
+  if (localImage) return localImage;
+  return { uri: fallbackUrl || getPlaceholderImage('plant') };
 }
 
 /**

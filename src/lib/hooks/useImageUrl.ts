@@ -2,11 +2,57 @@
 // Uses AI-generated images from the species-images database
 // Falls back to original URLs if generated image not available
 
+import { ImageSourcePropType } from 'react-native';
 import { fishImages, plantImages } from '../data/species-images';
 
+// Type for image source that can be either a require() number or a URI object
+export type ImageSource = number | { uri: string };
+
 /**
- * Get the image URL for a fish species
+ * Get the image source for a fish species
  * Uses AI-generated images when available, falls back to provided URL
+ * Returns an ImageSource that can be used directly with Image component
+ */
+export function useFishImageSource(
+  fishId: string,
+  fallbackUrl: string,
+  commonName?: string,
+  scientificName?: string
+): ImageSource {
+  // Check if we have a generated image for this fish
+  const generatedImage = fishImages[fishId];
+  if (generatedImage) {
+    return generatedImage;
+  }
+
+  // Fall back to the original URL
+  return { uri: fallbackUrl };
+}
+
+/**
+ * Get the image source for a plant species
+ * Uses AI-generated images when available, falls back to provided URL
+ * Returns an ImageSource that can be used directly with Image component
+ */
+export function usePlantImageSource(
+  plantId: string,
+  fallbackUrl: string,
+  commonName?: string,
+  scientificName?: string
+): ImageSource {
+  // Check if we have a generated image for this plant
+  const generatedImage = plantImages[plantId];
+  if (generatedImage) {
+    return generatedImage;
+  }
+
+  // Fall back to the original URL
+  return { uri: fallbackUrl };
+}
+
+/**
+ * Legacy function - returns URL string only (for backwards compatibility)
+ * Only returns generated image URL if it's a string, otherwise fallback
  */
 export function useFishImage(
   fishId: string,
@@ -14,19 +60,15 @@ export function useFishImage(
   commonName?: string,
   scientificName?: string
 ): string {
-  // Check if we have a generated image for this fish
-  const generatedUrl = fishImages[fishId];
-  if (generatedUrl) {
-    return generatedUrl;
-  }
-
-  // Fall back to the original URL
+  // For backwards compatibility, just return the fallback URL
+  // The new AI images use require() which returns a number
+  // Components should migrate to useFishImageSource
   return fallbackUrl;
 }
 
 /**
- * Get the image URL for a plant species
- * Uses AI-generated images when available, falls back to provided URL
+ * Legacy function - returns URL string only (for backwards compatibility)
+ * Only returns generated image URL if it's a string, otherwise fallback
  */
 export function usePlantImage(
   plantId: string,
@@ -34,36 +76,9 @@ export function usePlantImage(
   commonName?: string,
   scientificName?: string
 ): string {
-  // Check if we have a generated image for this plant
-  const generatedUrl = plantImages[plantId];
-  if (generatedUrl) {
-    return generatedUrl;
-  }
-
-  // Fall back to the original URL
+  // For backwards compatibility, just return the fallback URL
+  // Components should migrate to usePlantImageSource
   return fallbackUrl;
-}
-
-/**
- * Async version - get fish image URL
- */
-export async function getFishImageUrl(
-  fishId: string,
-  fallbackUrl: string
-): Promise<string> {
-  const generatedUrl = fishImages[fishId];
-  return generatedUrl || fallbackUrl;
-}
-
-/**
- * Async version - get plant image URL
- */
-export async function getPlantImageUrl(
-  plantId: string,
-  fallbackUrl: string
-): Promise<string> {
-  const generatedUrl = plantImages[plantId];
-  return generatedUrl || fallbackUrl;
 }
 
 /**
