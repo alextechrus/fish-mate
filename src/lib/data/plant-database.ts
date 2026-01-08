@@ -1,5 +1,7 @@
 // Aquatic plants types and database
 
+import { ImageSource } from '../types/fish';
+
 export type PlantDifficulty = 'easy' | 'moderate' | 'difficult';
 export type PlantLighting = 'low' | 'medium' | 'high';
 export type PlantPlacement = 'foreground' | 'midground' | 'background' | 'floating';
@@ -17,7 +19,7 @@ export interface Plant {
   id: string;
   commonName: string;
   scientificName: string;
-  imageUrl: string;
+  imageUrl: ImageSource;
   description: string;
   difficulty: PlantDifficulty;
   lighting: PlantLighting;
@@ -41,7 +43,7 @@ export const plantDatabase: Plant[] = [
     id: 'java-fern',
     commonName: 'Java Fern',
     scientificName: 'Microsorum pteropus',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6e/Microsorum_pteropus.jpg/1280px-Microsorum_pteropus.jpg',
+    imageUrl: require('../../../assets/java-fern.png'),
     description: 'Hardy, low-maintenance plant perfect for beginners. Attach to driftwood or rocks - do not bury the rhizome.',
     difficulty: 'easy',
     lighting: 'low',
@@ -65,7 +67,7 @@ export const plantDatabase: Plant[] = [
     id: 'anubias',
     commonName: 'Anubias',
     scientificName: 'Anubias barteri',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/63/Anubias_barteri_var._nana.jpg/1280px-Anubias_barteri_var._nana.jpg',
+    imageUrl: require('../../../assets/anubias.png'),
     description: 'Extremely hardy plant with thick, dark green leaves. Great for tanks with plant-eating fish.',
     difficulty: 'easy',
     lighting: 'low',
@@ -89,7 +91,7 @@ export const plantDatabase: Plant[] = [
     id: 'amazon-sword',
     commonName: 'Amazon Sword',
     scientificName: 'Echinodorus amazonicus',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Echinodorus_grisebachii_Bleherae.jpg/1280px-Echinodorus_grisebachii_Bleherae.jpg',
+    imageUrl: require('../../../assets/amazon-sword.png'),
     description: 'Large, dramatic centerpiece plant with broad green leaves. Creates excellent shelter for fish.',
     difficulty: 'easy',
     lighting: 'medium',
@@ -113,7 +115,7 @@ export const plantDatabase: Plant[] = [
     id: 'java-moss',
     commonName: 'Java Moss',
     scientificName: 'Taxiphyllum barbieri',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/Vesicularia_dubyana.jpg/1280px-Vesicularia_dubyana.jpg',
+    imageUrl: require('../../../assets/java-moss.png'),
     description: 'Versatile moss that attaches to any surface. Perfect for breeding tanks and shrimp.',
     difficulty: 'easy',
     lighting: 'low',
@@ -137,7 +139,7 @@ export const plantDatabase: Plant[] = [
     id: 'hornwort',
     commonName: 'Hornwort',
     scientificName: 'Ceratophyllum demersum',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Ceratophyllum_demersum_sl1.jpg/1280px-Ceratophyllum_demersum_sl1.jpg',
+    imageUrl: require('../../../assets/hornwort.png'),
     description: 'Fast-growing floating or planted stem. Excellent for absorbing excess nutrients.',
     difficulty: 'easy',
     lighting: 'medium',
@@ -161,7 +163,7 @@ export const plantDatabase: Plant[] = [
     id: 'water-wisteria',
     commonName: 'Water Wisteria',
     scientificName: 'Hygrophila difformis',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Hygrophila_difformis.jpg/1280px-Hygrophila_difformis.jpg',
+    imageUrl: require('../../../assets/water-wisteria.png'),
     description: 'Beautiful lacy leaves that change shape based on lighting. Fast grower and nutrient absorber.',
     difficulty: 'easy',
     lighting: 'medium',
@@ -186,7 +188,7 @@ export const plantDatabase: Plant[] = [
     id: 'cryptocoryne',
     commonName: 'Cryptocoryne Wendtii',
     scientificName: 'Cryptocoryne wendtii',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Cryptocoryne_wendtii.jpg/1024px-Cryptocoryne_wendtii.jpg',
+    imageUrl: require('../../../assets/cryptocoryne-wendtii.png'),
     description: 'Popular rosette plant with bronze-green leaves. May melt initially but recovers strong.',
     difficulty: 'moderate',
     lighting: 'low',
@@ -210,7 +212,7 @@ export const plantDatabase: Plant[] = [
     id: 'vallisneria',
     commonName: 'Vallisneria',
     scientificName: 'Vallisneria spiralis',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Vallisneria_spiralis.jpg/800px-Vallisneria_spiralis.jpg',
+    imageUrl: require('../../../assets/vallisneria.png'),
     description: 'Grass-like plant with long ribbon leaves. Creates beautiful flowing background.',
     difficulty: 'moderate',
     lighting: 'medium',
@@ -234,7 +236,7 @@ export const plantDatabase: Plant[] = [
     id: 'dwarf-sagittaria',
     commonName: 'Dwarf Sagittaria',
     scientificName: 'Sagittaria subulata',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a1/Sagittaria_subulata.jpg/1024px-Sagittaria_subulata.jpg',
+    imageUrl: require('../../../assets/dwarf-sagittaria.png'),
     description: 'Grass-like carpet plant that spreads quickly. Great for natural aquascape look.',
     difficulty: 'moderate',
     lighting: 'medium',
@@ -258,7 +260,7 @@ export const plantDatabase: Plant[] = [
     id: 'ludwigia-repens',
     commonName: 'Ludwigia Repens',
     scientificName: 'Ludwigia repens',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Ludwigia_repens.jpg/1024px-Ludwigia_repens.jpg',
+    imageUrl: require('../../../assets/ludwigia-repens.png'),
     description: 'Stunning red stem plant that adds color contrast. Relatively easy red plant for beginners.',
     difficulty: 'moderate',
     lighting: 'high',
@@ -283,7 +285,7 @@ export const plantDatabase: Plant[] = [
     id: 'dwarf-baby-tears',
     commonName: 'Dwarf Baby Tears',
     scientificName: 'Hemianthus callitrichoides',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/dc/Hemianthus_callitrichoides.jpg/1280px-Hemianthus_callitrichoides.jpg',
+    imageUrl: require('../../../assets/dwarf-baby-tears.png'),
     description: 'Smallest aquarium plant - creates lush carpet. The holy grail of carpet plants.',
     difficulty: 'difficult',
     lighting: 'high',
@@ -307,7 +309,7 @@ export const plantDatabase: Plant[] = [
     id: 'rotala-rotundifolia',
     commonName: 'Rotala Rotundifolia',
     scientificName: 'Rotala rotundifolia',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1e/Rotala_rotundifolia.jpg/1024px-Rotala_rotundifolia.jpg',
+    imageUrl: require('../../../assets/rotala-rotundifolia.png'),
     description: 'Delicate stem plant that develops pink/red coloration under high light.',
     difficulty: 'difficult',
     lighting: 'high',
@@ -331,7 +333,7 @@ export const plantDatabase: Plant[] = [
     id: 'monte-carlo',
     commonName: 'Monte Carlo',
     scientificName: 'Micranthemum tweediei',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f4/Micranthemum_umbrosum.jpg/1280px-Micranthemum_umbrosum.jpg',
+    imageUrl: require('../../../assets/monte-carlo.png'),
     description: 'Popular carpeting plant easier than dwarf baby tears but still challenging.',
     difficulty: 'difficult',
     lighting: 'high',
@@ -356,7 +358,7 @@ export const plantDatabase: Plant[] = [
     id: 'amazon-frogbit',
     commonName: 'Amazon Frogbit',
     scientificName: 'Limnobium laevigatum',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Limnobium_laevigatum.jpg/1024px-Limnobium_laevigatum.jpg',
+    imageUrl: require('../../../assets/amazon-frogbit.png'),
     description: 'Floating plant with lily pad-like leaves. Excellent for bettas and shading.',
     difficulty: 'easy',
     lighting: 'medium',
@@ -380,7 +382,7 @@ export const plantDatabase: Plant[] = [
     id: 'red-root-floater',
     commonName: 'Red Root Floater',
     scientificName: 'Phyllanthus fluitans',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/16/Phyllanthus_fluitans.jpg/1024px-Phyllanthus_fluitans.jpg',
+    imageUrl: require('../../../assets/red-root-floater.png'),
     description: 'Stunning floating plant with red roots and leaves that turn red in high light.',
     difficulty: 'moderate',
     lighting: 'high',
@@ -404,7 +406,7 @@ export const plantDatabase: Plant[] = [
     id: 'duckweed',
     commonName: 'Duckweed',
     scientificName: 'Lemna minor',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Lemna_minor_001.JPG/1280px-Lemna_minor_001.JPG',
+    imageUrl: require('../../../assets/duckweed.png'),
     description: 'Tiny floating plant that multiplies rapidly. Great nutrient export but can take over.',
     difficulty: 'easy',
     lighting: 'low',

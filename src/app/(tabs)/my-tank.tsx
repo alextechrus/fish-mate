@@ -530,7 +530,7 @@ const TankCard = ({
                   {plants.slice(0, 6).map((p) => (
                     <View key={p.id} className="mr-2 items-center">
                       <Image
-                        source={{ uri: p.imageUrl }}
+                        source={getImageSource(p.imageUrl)}
                         className="w-12 h-12 rounded-lg"
                         resizeMode="cover"
                       />
