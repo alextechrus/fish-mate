@@ -6,7 +6,6 @@ import {
   Pressable,
   Modal,
   TextInput,
-  Alert,
   Image,
   ActivityIndicator,
   Linking,
@@ -19,13 +18,11 @@ import {
   LogIn,
   LogOut,
   Share2,
-  Fish as FishIcon,
   X,
   Send,
   Waves,
   Trash2,
   CheckCircle,
-  AlertTriangle,
   Settings,
   ChevronRight,
   Droplets,
@@ -41,7 +38,6 @@ import { useColorScheme } from '@/lib/useColorScheme';
 import { useAuthStore, SharedTank } from '@/lib/state/auth-store';
 import { useTankStore } from '@/lib/state/tank-store';
 import { useSettingsStore, VolumeUnit, TemperatureUnit } from '@/lib/state/settings-store';
-import { checkMultipleFishCompatibility } from '@/lib/utils/compatibility';
 import { getFishById } from '@/lib/data/fish-database';
 import { TankSetup } from '@/lib/types/fish';
 import { cn } from '@/lib/cn';
@@ -414,6 +410,7 @@ function SettingsContent({ isDark }: { isDark: boolean }) {
   const [shareModalVisible, setShareModalVisible] = useState(false);
   const [selectedTank, setSelectedTank] = useState<TankSetup | null>(null);
   const [showDeleteSharedModal, setShowDeleteSharedModal] = useState(false);
+  const [showRateModal, setShowRateModal] = useState(false);
   const [deletingSharedTank, setDeletingSharedTank] = useState<SharedTank | null>(null);
 
   const handleDeleteSharedTank = (sharedTank: SharedTank) => {
@@ -433,39 +430,7 @@ function SettingsContent({ isDark }: { isDark: boolean }) {
     logout();
   };
 
-  const handleShareTank = (tank: TankSetup) => {
-    // Check if tank is compatible before sharing
-    const fishInTank = tank.fishIds.map(id => getFishById(id)).filter(Boolean);
-
-    if (fishInTank.length < 2) {
-      setSelectedTank(tank);
-      setShareModalVisible(true);
-      return;
-    }
-
-    const compatibilityCheck = checkMultipleFishCompatibility(tank.fishIds);
-
-    if (compatibilityCheck.overallStatus === 'incompatible') {
-      Alert.alert(
-        'Incompatible Tank',
-        'This tank has compatibility issues. Please fix them before sharing.',
-        [{ text: 'OK' }]
-      );
-      return;
-    }
-
-    setSelectedTank(tank);
-    setShareModalVisible(true);
-  };
-
-  const handleRateApp = () => {
-    // This would normally open the app store
-    Alert.alert(
-      'Rate FishMate',
-      'Thank you for using FishMate! Rating will be available once the app is published to the App Store.',
-      [{ text: 'OK' }]
-    );
-  };
+  const handleRateApp = () => setShowRateModal(true);
 
   const handleReportBug = () => {
     Linking.openURL('mailto:support@fishmate.app?subject=Bug Report - FishMate');
@@ -731,84 +696,6 @@ function SettingsContent({ isDark }: { isDark: boolean }) {
             </View>
           </View>
 
-          {/* Share Tanks Section */}
-          {isAuthenticated && tanks.length > 0 && (
-            <View className="px-5 mt-6">
-              <Text
-                className={cn(
-                  'text-lg font-bold mb-3',
-                  isDark ? 'text-white' : 'text-slate-900'
-                )}
-              >
-                Share Your Tanks
-              </Text>
-
-              {tanks.map(tank => {
-                const fishInTank = tank.fishIds.map(id => getFishById(id)).filter(Boolean);
-                const compatCheck = tank.fishIds.length >= 2
-                  ? checkMultipleFishCompatibility(tank.fishIds)
-                  : null;
-                const isCompatible = !compatCheck || compatCheck.overallStatus !== 'incompatible';
-
-                return (
-                  <Pressable
-                    key={tank.id}
-                    onPress={() => handleShareTank(tank)}
-                    className={cn(
-                      'flex-row items-center p-4 rounded-xl mb-3',
-                      isDark ? 'bg-slate-800' : 'bg-white'
-                    )}
-                    style={{
-                      shadowColor: '#000',
-                      shadowOffset: { width: 0, height: 2 },
-                      shadowOpacity: isDark ? 0.3 : 0.1,
-                      shadowRadius: 8,
-                      elevation: 4,
-                    }}
-                  >
-                    <View
-                      className={cn(
-                        'w-12 h-12 rounded-xl items-center justify-center mr-3',
-                        isCompatible ? 'bg-sky-500/20' : 'bg-amber-500/20'
-                      )}
-                    >
-                      <FishIcon size={24} color={isCompatible ? '#0EA5E9' : '#F59E0B'} />
-                    </View>
-                    <View className="flex-1">
-                      <Text
-                        className={cn(
-                          'text-base font-semibold',
-                          isDark ? 'text-white' : 'text-slate-900'
-                        )}
-                      >
-                        {tank.name}
-                      </Text>
-                      <View className="flex-row items-center">
-                        <Text
-                          className={cn(
-                            'text-xs',
-                            isDark ? 'text-slate-400' : 'text-slate-500'
-                          )}
-                        >
-                          {fishInTank.length} fish
-                        </Text>
-                        {!isCompatible && (
-                          <View className="flex-row items-center ml-2">
-                            <AlertTriangle size={12} color="#F59E0B" />
-                            <Text className="text-xs text-amber-500 ml-1">
-                              Issues
-                            </Text>
-                          </View>
-                        )}
-                      </View>
-                    </View>
-                    <Share2 size={20} color={isDark ? '#64748B' : '#94A3B8'} />
-                  </Pressable>
-                );
-              })}
-            </View>
-          )}
-
           {/* Shared With Me Section */}
           {isAuthenticated && sharedTanks.length > 0 && (
             <View className="px-5 mt-6">
@@ -967,6 +854,33 @@ function SettingsContent({ isDark }: { isDark: boolean }) {
           <View className="h-8" />
         </ScrollView>
       </SafeAreaView>
+
+      <Modal
+        visible={showRateModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowRateModal(false)}
+      >
+        <View className="flex-1 bg-black/50 justify-center items-center px-6">
+          <View className={cn('w-full max-w-sm rounded-2xl p-6', isDark ? 'bg-slate-800' : 'bg-white')}>
+            <View className="items-center mb-4">
+              <Star size={40} color="#F59E0B" fill="#F59E0B" />
+              <Text className={cn('text-xl font-bold mt-3 text-center', isDark ? 'text-white' : 'text-slate-900')}>
+                Rate FishMate
+              </Text>
+            </View>
+            <Text className={cn('text-center mb-6', isDark ? 'text-slate-300' : 'text-slate-600')}>
+              Thank you for using FishMate! Ratings will be available once the app is published to the App Store.
+            </Text>
+            <Pressable
+              onPress={() => setShowRateModal(false)}
+              className="bg-sky-500 py-3 rounded-xl items-center"
+            >
+              <Text className="text-white font-bold">Got it</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
 
       <ShareTankModal
         visible={shareModalVisible}
