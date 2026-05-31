@@ -160,13 +160,13 @@ export async function generateTankImage(
     return null;
   }
 
-  const fishList = fishNames.length > 0 ? fishNames.join(', ') : 'fish';
-  const plantList = plantNames.length > 0 ? `with ${plantNames.join(', ')} aquatic plants` : 'with minimal decoration';
+  const fishList = fishNames.length > 0 ? fishNames.join(', ') : 'tropical fish';
+  const plantList = plantNames.length > 0 ? `with ${plantNames.join(', ')} aquatic plants` : 'with natural aquatic plants';
   const waterDesc = waterType === 'saltwater' ? 'saltwater marine' : 'freshwater planted';
 
   const prompt = isDirty
     ? `A neglected ${waterDesc} aquarium with ${fishList} ${plantList}. Murky cloudy green water, algae coating the glass, debris on the substrate, brown and overgrown plants. Realistic aquarium photography.`
-    : `A pristine professional ${waterDesc} aquarium with ${fishList} ${plantList}. Crystal clear water, clean glass, lush healthy plants, soft aquarium lighting, beautiful aquascape. National Geographic quality aquarium photography.`;
+    : `A stunning professional ${waterDesc} aquarium containing ${fishList} ${plantList}. Crystal clear water, spotless glass, vibrant healthy plants, perfect aquarium lighting, beautiful aquascape layout. National Geographic quality aquarium photography.`;
 
   try {
     const response = await fetch('https://api.openai.com/v1/images/generations', {
@@ -180,6 +180,7 @@ export async function generateTankImage(
         prompt,
         n: 1,
         size: '1024x1024',
+        response_format: 'b64_json',
       }),
     });
 
@@ -190,7 +191,9 @@ export async function generateTankImage(
     }
 
     const data = await response.json();
-    return data.data?.[0]?.url || null;
+    const b64 = data.data?.[0]?.b64_json;
+    if (!b64) return null;
+    return `data:image/png;base64,${b64}`;
   } catch (error) {
     console.error('Error generating tank image:', error);
     return null;

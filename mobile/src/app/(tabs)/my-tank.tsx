@@ -1,5 +1,5 @@
 // src/app/(tabs)/my-tank.tsx
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import {
   View, Text, ScrollView, Pressable, Image, Modal,
   TextInput, TouchableWithoutFeedback, Keyboard,
@@ -327,6 +327,22 @@ export default function MyTankScreen() {
     if (url) updateTankImage(tank.id, url, isDirty);
     setGeneratingImageFor(null);
   }, [generatingImageFor, updateTankImage]);
+
+  // Auto-generate images for tanks that have fish but no image
+  const autoGenerateRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    sortedTanks.forEach(tank => {
+      if (
+        tank.fishIds.length > 0 &&
+        !tank.generatedImageUrl &&
+        !autoGenerateRef.current.has(tank.id)
+      ) {
+        autoGenerateRef.current.add(tank.id);
+        handleRegenerateImage(tank);
+      }
+    });
+  }, [sortedTanks.map(t => t.id).join(',')]);
 
   const handleMarkCleaned = useCallback((tank: ExtendedTankSetup) => {
     confirmCleaned(tank.id);
