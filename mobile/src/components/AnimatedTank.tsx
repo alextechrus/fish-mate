@@ -47,26 +47,38 @@ const SwimmingFish: React.FC<SwimmingFishProps> = ({ fish, tankWidth, tankHeight
   const bobAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    let animation: Animated.CompositeAnimation | null = null;
+    let mounted = true;
+
     const swim = () => {
+      if (!mounted) return;
       xAnim.setValue(-fishW - 10);
-      Animated.timing(xAnim, {
+      animation = Animated.timing(xAnim, {
         toValue: tankWidth + fishW + 10,
         duration: speedMs,
         easing: Easing.linear,
         useNativeDriver: true,
-      }).start(({ finished }) => { if (finished) swim(); });
+      });
+      animation.start(({ finished }) => { if (finished && mounted) swim(); });
     };
+
     const timer = setTimeout(swim, startDelay);
-    return () => clearTimeout(timer);
+    return () => {
+      mounted = false;
+      clearTimeout(timer);
+      animation?.stop();
+    };
   }, [tankWidth]);
 
   useEffect(() => {
-    Animated.loop(
+    const loop = Animated.loop(
       Animated.sequence([
         Animated.timing(bobAnim, { toValue: -3, duration: 900 + index * 100, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
         Animated.timing(bobAnim, { toValue: 3, duration: 900 + index * 100, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
       ])
-    ).start();
+    );
+    loop.start();
+    return () => loop.stop();
   }, []);
 
   return (
@@ -99,11 +111,10 @@ const SwimmingFish: React.FC<SwimmingFishProps> = ({ fish, tankWidth, tankHeight
 interface SwayingPlantProps {
   plant: Plant;
   xPx: number;
-  tankHeight: number;
   index: number;
 }
 
-const SwayingPlant: React.FC<SwayingPlantProps> = ({ plant, xPx, tankHeight, index }) => {
+const SwayingPlant: React.FC<SwayingPlantProps> = ({ plant, xPx, index }) => {
   const h = hashId(plant.id);
   const color = PLANT_GREENS[h % PLANT_GREENS.length];
   const heightPx = 30 + (h % 5) * 10;
@@ -112,12 +123,14 @@ const SwayingPlant: React.FC<SwayingPlantProps> = ({ plant, xPx, tankHeight, ind
 
   useEffect(() => {
     const dur = 2200 + index * 300;
-    Animated.loop(
+    const loop = Animated.loop(
       Animated.sequence([
         Animated.timing(rotAnim, { toValue: -8, duration: dur, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
         Animated.timing(rotAnim, { toValue: 8, duration: dur, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
       ])
-    ).start();
+    );
+    loop.start();
+    return () => loop.stop();
   }, []);
 
   const rotate = rotAnim.interpolate({ inputRange: [-8, 8], outputRange: ['-8deg', '8deg'] });
