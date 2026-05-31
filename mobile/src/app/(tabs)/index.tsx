@@ -295,7 +295,7 @@ const TipsCarousel = ({ isDark }: { isDark: boolean }) => {
         snapToInterval={scrollOffset}
         decelerationRate="fast"
         contentContainerStyle={{ paddingHorizontal: 20 }}
-        style={{ flexGrow: 0 }}
+        style={{ flexGrow: 0, height: 155 }}
       >
         {aquariumTips.map((tip, index) => {
           const TipIcon = tip.icon;
@@ -304,10 +304,11 @@ const TipsCarousel = ({ isDark }: { isDark: boolean }) => {
               key={index}
               style={{
                 width: cardWidth,
+                height: 155,
                 marginRight: index < aquariumTips.length - 1 ? cardSpacing : 0,
               }}
               className={cn(
-                'rounded-2xl p-5',
+                'rounded-2xl p-5 overflow-hidden',
                 isDark ? 'bg-slate-800' : 'bg-white'
               )}
             >
@@ -328,6 +329,7 @@ const TipsCarousel = ({ isDark }: { isDark: boolean }) => {
                 </Text>
               </View>
               <Text
+                numberOfLines={4}
                 className={cn(
                   'text-sm leading-5',
                   isDark ? 'text-slate-300' : 'text-slate-600'
