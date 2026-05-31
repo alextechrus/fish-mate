@@ -230,11 +230,18 @@ export const useTankStore = create<TankState>()(
 
       getSortedTanks: () => {
         const state = get();
-        const { tanks, favoriteTankId } = state;
-        if (!favoriteTankId) return tanks;
-        const favorite = tanks.find(t => t.id === favoriteTankId);
-        const others = tanks.filter(t => t.id !== favoriteTankId);
-        return favorite ? [favorite, ...others] : tanks;
+        const { tanks, activeTankId, favoriteTankId } = state;
+        // Active (main) tank first, then favorite, then rest
+        const active = activeTankId ? tanks.find(t => t.id === activeTankId) : undefined;
+        const favorite = favoriteTankId && favoriteTankId !== activeTankId
+          ? tanks.find(t => t.id === favoriteTankId)
+          : undefined;
+        const rest = tanks.filter(t => t.id !== activeTankId && t.id !== favoriteTankId);
+        return [
+          ...(active ? [active] : []),
+          ...(favorite ? [favorite] : []),
+          ...rest,
+        ];
       },
 
       addActivity: (tankId, activity) => {
