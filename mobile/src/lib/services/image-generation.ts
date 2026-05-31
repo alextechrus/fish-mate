@@ -145,3 +145,54 @@ export async function generateImageBase64(
     return null;
   }
 }
+
+/**
+ * Generate an AI image of a complete aquarium tank with specified fish and plants
+ */
+export async function generateTankImage(
+  fishNames: string[],
+  plantNames: string[],
+  waterType: 'freshwater' | 'saltwater',
+  isDirty: boolean
+): Promise<string | null> {
+  if (!OPENAI_API_KEY) {
+    console.error('OpenAI API key not configured');
+    return null;
+  }
+
+  const fishList = fishNames.length > 0 ? fishNames.join(', ') : 'fish';
+  const plantList = plantNames.length > 0 ? `with ${plantNames.join(', ')} aquatic plants` : 'with minimal decoration';
+  const waterDesc = waterType === 'saltwater' ? 'saltwater marine' : 'freshwater planted';
+
+  const prompt = isDirty
+    ? `A neglected ${waterDesc} aquarium with ${fishList} ${plantList}. Murky cloudy green water, algae coating the glass, debris on the substrate, brown and overgrown plants. Realistic aquarium photography.`
+    : `A pristine professional ${waterDesc} aquarium with ${fishList} ${plantList}. Crystal clear water, clean glass, lush healthy plants, soft aquarium lighting, beautiful aquascape. National Geographic quality aquarium photography.`;
+
+  try {
+    const response = await fetch('https://api.openai.com/v1/images/generations', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: 'gpt-image-1',
+        prompt,
+        n: 1,
+        size: '1024x1024',
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      console.error('Tank image generation failed:', error);
+      return null;
+    }
+
+    const data = await response.json();
+    return data.data?.[0]?.url || null;
+  } catch (error) {
+    console.error('Error generating tank image:', error);
+    return null;
+  }
+}
