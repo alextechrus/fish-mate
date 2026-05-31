@@ -6,11 +6,7 @@ import {
   Pressable,
   Image,
   TextInput,
-  Modal,
   Keyboard,
-  TouchableWithoutFeedback,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -22,24 +18,19 @@ import {
   Fish as FishIcon,
   Leaf,
   Sun,
-  CheckCircle,
-  AlertCircle,
-  AlertTriangle,
   PoundSterling,
   Star,
   Sparkles,
-  Layers,
+  Grid3X3,
 } from 'lucide-react-native';
 import { useColorScheme } from '@/lib/useColorScheme';
 import { fishDatabase, searchFish } from '@/lib/data/fish-database';
 import { plantDatabase, searchPlants, Plant, PlantPlacement } from '@/lib/data/plant-database';
 import { Fish, WaterType, Temperament, TankZone } from '@/lib/types/fish';
-import { checkTwoFishCompatibility } from '@/lib/utils/compatibility';
-import { CompatibilityStatus } from '@/lib/types/fish';
 import { cn } from '@/lib/cn';
 import { useFishImage, usePlantImage } from '@/lib/hooks/useImageUrl';
 
-type SearchMode = 'fish' | 'plants';
+type SearchMode = 'fish' | 'plants' | 'compatibility';
 
 const FilterChip = ({
   label,
@@ -298,240 +289,6 @@ const PlantListItem = ({
   );
 };
 
-// Compatibility Check Modal
-const CompatibilityModal = ({
-  visible,
-  onClose,
-  selectedFish,
-  isDark,
-}: {
-  visible: boolean;
-  onClose: () => void;
-  selectedFish: Fish | null;
-  isDark: boolean;
-}) => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showSuggestions, setShowSuggestions] = useState(true);
-  const router = useRouter();
-
-  // Suggested fish for quick selection (popular community fish)
-  const suggestedFish = useMemo(() => {
-    if (!selectedFish) return [];
-    return fishDatabase
-      .filter((f) => f.id !== selectedFish.id)
-      .filter((f) => f.waterType === selectedFish.waterType)
-      .slice(0, 6);
-  }, [selectedFish]);
-
-  const searchResults = useMemo(() => {
-    if (!searchQuery.trim() || !selectedFish) return [];
-    return searchFish(searchQuery)
-      .filter((f) => f.id !== selectedFish.id)
-      .slice(0, 8);
-  }, [searchQuery, selectedFish]);
-
-  const getCompatibilityWithFish = (otherFish: Fish) => {
-    if (!selectedFish) return null;
-    return checkTwoFishCompatibility(selectedFish, otherFish);
-  };
-
-  const statusConfig: Record<CompatibilityStatus, { color: string; icon: typeof CheckCircle; label: string }> = {
-    compatible: { color: '#10B981', icon: CheckCircle, label: 'Compatible' },
-    conditional: { color: '#F59E0B', icon: AlertCircle, label: 'Caution' },
-    incompatible: { color: '#EF4444', icon: AlertTriangle, label: 'Incompatible' },
-  };
-
-  const renderFishItem = (fish: Fish) => {
-    const result = getCompatibilityWithFish(fish);
-    const config = result ? statusConfig[result.status] : null;
-    const StatusIcon = config?.icon || CheckCircle;
-
-    return (
-      <Pressable
-        key={fish.id}
-        onPress={() => {
-          onClose();
-          router.push(`/fish/${fish.id}`);
-        }}
-        className={cn(
-          'flex-row items-center p-3 rounded-xl mb-2',
-          isDark ? 'bg-slate-800' : 'bg-slate-50'
-        )}
-      >
-        <FishImage fish={fish} className="w-14 h-14 rounded-lg" />
-        <View className="flex-1 ml-3">
-          <Text
-            className={cn(
-              'text-sm font-semibold',
-              isDark ? 'text-white' : 'text-slate-900'
-            )}
-          >
-            {fish.commonName}
-          </Text>
-          <Text
-            className={cn(
-              'text-xs',
-              isDark ? 'text-slate-400' : 'text-slate-500'
-            )}
-          >
-            {fish.temperament} • {fish.waterType}
-          </Text>
-          {result && result.reasons.length > 0 && (
-            <Text
-              className="text-xs mt-1"
-              style={{ color: config?.color }}
-              numberOfLines={1}
-            >
-              {result.reasons[0]}
-            </Text>
-          )}
-        </View>
-        {config && (
-          <View className="items-center">
-            <StatusIcon size={24} color={config.color} />
-            <Text
-              className="text-xs font-medium mt-1"
-              style={{ color: config.color }}
-            >
-              {config.label}
-            </Text>
-          </View>
-        )}
-      </Pressable>
-    );
-  };
-
-  if (!selectedFish) return null;
-
-  return (
-    <Modal visible={visible} transparent animationType="slide">
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          className="flex-1"
-        >
-          <View className="flex-1 justify-end">
-            <Pressable className="flex-1" onPress={onClose} />
-            <View
-              className={cn(
-                'rounded-t-3xl p-5',
-                isDark ? 'bg-slate-900' : 'bg-white'
-              )}
-              style={{ maxHeight: '85%' }}
-            >
-              <View className="flex-row items-center justify-between mb-4">
-                <View className="flex-row items-center flex-1">
-                  <FishImage fish={selectedFish} className="w-12 h-12 rounded-lg" />
-                  <View className="ml-3 flex-1">
-                    <Text
-                      className={cn(
-                        'text-lg font-bold',
-                        isDark ? 'text-white' : 'text-slate-900'
-                      )}
-                    >
-                      Check Compatibility
-                    </Text>
-                    <Text
-                      className={cn(
-                        'text-sm',
-                        isDark ? 'text-slate-400' : 'text-slate-500'
-                      )}
-                    >
-                      {selectedFish.commonName}
-                    </Text>
-                  </View>
-                </View>
-                <Pressable onPress={onClose}>
-                  <X size={24} color={isDark ? '#94A3B8' : '#64748B'} />
-                </Pressable>
-              </View>
-
-              {/* Search */}
-              <View
-                className={cn(
-                  'flex-row items-center px-4 py-3 rounded-xl mb-4',
-                  isDark ? 'bg-slate-800' : 'bg-slate-100'
-                )}
-              >
-                <Search size={20} color={isDark ? '#94A3B8' : '#64748B'} />
-                <TextInput
-                  value={searchQuery}
-                  onChangeText={(text) => {
-                    setSearchQuery(text);
-                    setShowSuggestions(!text.trim());
-                  }}
-                  placeholder="Search for another fish..."
-                  placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
-                  style={{
-                    flex: 1,
-                    marginLeft: 12,
-                    fontSize: 16,
-                    color: isDark ? '#FFFFFF' : '#0F172A',
-                  }}
-                  returnKeyType="search"
-                  onSubmitEditing={Keyboard.dismiss}
-                />
-                {searchQuery ? (
-                  <Pressable onPress={() => {
-                    setSearchQuery('');
-                    setShowSuggestions(true);
-                  }}>
-                    <X size={18} color={isDark ? '#94A3B8' : '#64748B'} />
-                  </Pressable>
-                ) : null}
-              </View>
-
-              {/* Results */}
-              <ScrollView
-                showsVerticalScrollIndicator={false}
-                keyboardShouldPersistTaps="handled"
-              >
-                {/* Suggested Fish Section */}
-                {showSuggestions && suggestedFish.length > 0 && (
-                  <>
-                    <Text
-                      className={cn(
-                        'text-sm font-semibold mb-3',
-                        isDark ? 'text-slate-300' : 'text-slate-600'
-                      )}
-                    >
-                      Tap a fish to check compatibility
-                    </Text>
-                    {suggestedFish.map(renderFishItem)}
-                  </>
-                )}
-
-                {/* Search Results */}
-                {searchResults.length > 0 ? (
-                  <>
-                    <Text
-                      className={cn(
-                        'text-sm font-semibold mb-3',
-                        isDark ? 'text-slate-300' : 'text-slate-600'
-                      )}
-                    >
-                      Search Results
-                    </Text>
-                    {searchResults.map(renderFishItem)}
-                  </>
-                ) : searchQuery.trim() ? (
-                  <Text
-                    className={cn(
-                      'text-center py-8',
-                      isDark ? 'text-slate-400' : 'text-slate-500'
-                    )}
-                  >
-                    No fish found
-                  </Text>
-                ) : null}
-              </ScrollView>
-            </View>
-          </View>
-        </KeyboardAvoidingView>
-      </TouchableWithoutFeedback>
-    </Modal>
-  );
-};
 
 export default function SearchScreen() {
   const router = useRouter();
@@ -555,10 +312,6 @@ export default function SearchScreen() {
   const [selectedPlantPlacement, setSelectedPlantPlacement] = useState<PlantPlacement | null>(null);
   const [selectedGrowthRate, setSelectedGrowthRate] = useState<'slow' | 'moderate' | 'fast' | null>(null);
   const [selectedCO2, setSelectedCO2] = useState<boolean | null>(null);
-
-  // Compatibility modal state
-  const [compatibilityModalVisible, setCompatibilityModalVisible] = useState(false);
-  const [selectedFishForCompatibility, setSelectedFishForCompatibility] = useState<Fish | null>(null);
 
   // Filtered results
   const filteredFish = useMemo(() => {
@@ -645,8 +398,7 @@ export default function SearchScreen() {
     selectedGrowthRate || selectedCO2 !== null;
 
   const handleCheckCompatibility = (fish: Fish) => {
-    setSelectedFishForCompatibility(fish);
-    setCompatibilityModalVisible(true);
+    router.push(`/compatibility-check?fishId=${fish.id}`);
   };
 
   return (
@@ -655,88 +407,55 @@ export default function SearchScreen() {
         {/* Header */}
         <LinearGradient
           colors={isDark ? ['#1E293B', '#0F172A'] : ['#0EA5E9', '#0284C7']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={{
-            paddingHorizontal: 20,
-            paddingTop: 8,
-            paddingBottom: 16,
-          }}
+          start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+          style={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 16 }}
         >
           <View className="flex-row items-center mb-3">
             <Search size={24} color="white" />
-            <Text className="text-white text-2xl font-bold ml-2">
-              Search
-            </Text>
+            <Text className="text-white text-2xl font-bold ml-2">Search</Text>
           </View>
-
-          {/* Fish/Plants Toggle */}
-          <View className="flex-row bg-white/20 rounded-lg p-1 mb-3">
-            <Pressable
-              onPress={() => setSearchMode('fish')}
-              className={cn(
-                'flex-1 flex-row items-center justify-center px-3 py-2 rounded-md',
-                searchMode === 'fish' ? 'bg-white' : ''
-              )}
-            >
-              <FishIcon size={18} color={searchMode === 'fish' ? '#0EA5E9' : 'white'} />
-              <Text
-                className={cn(
-                  'text-sm font-medium ml-2',
-                  searchMode === 'fish' ? 'text-sky-500' : 'text-white'
-                )}
+          {/* 3-way toggle */}
+          <View className="flex-row bg-white/20 rounded-lg p-1">
+            {(['fish', 'plants', 'compatibility'] as SearchMode[]).map(mode => (
+              <Pressable
+                key={mode}
+                onPress={() => setSearchMode(mode)}
+                className={cn('flex-1 items-center justify-center py-2 rounded-md', searchMode === mode ? 'bg-white' : '')}
               >
-                Fish
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={() => setSearchMode('plants')}
-              className={cn(
-                'flex-1 flex-row items-center justify-center px-3 py-2 rounded-md',
-                searchMode === 'plants' ? 'bg-white' : ''
-              )}
-            >
-              <Leaf size={18} color={searchMode === 'plants' ? '#10B981' : 'white'} />
-              <Text
-                className={cn(
-                  'text-sm font-medium ml-2',
-                  searchMode === 'plants' ? 'text-emerald-500' : 'text-white'
-                )}
-              >
-                Plants
-              </Text>
-            </Pressable>
-          </View>
-
-          {/* Search Bar */}
-          <View
-            className={cn(
-              'flex-row items-center px-4 py-3 rounded-xl',
-              'bg-white/20'
-            )}
-          >
-            <Search size={20} color="white" />
-            <TextInput
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              placeholder={`Search ${searchMode}...`}
-              placeholderTextColor="rgba(255,255,255,0.6)"
-              style={{
-                flex: 1,
-                marginLeft: 12,
-                fontSize: 16,
-                color: 'white',
-              }}
-              returnKeyType="search"
-              onSubmitEditing={Keyboard.dismiss}
-            />
-            {searchQuery ? (
-              <Pressable onPress={() => setSearchQuery('')}>
-                <X size={20} color="white" />
+                <Text className={cn('text-sm font-semibold capitalize',
+                  searchMode === mode
+                    ? mode === 'fish' ? 'text-sky-500' : mode === 'plants' ? 'text-emerald-500' : 'text-violet-500'
+                    : 'text-white'
+                )}>
+                  {mode === 'compatibility' ? 'Compat.' : mode.charAt(0).toUpperCase() + mode.slice(1)}
+                </Text>
               </Pressable>
-            ) : null}
+            ))}
           </View>
         </LinearGradient>
+
+        {/* Search bar — outside gradient, keyboard-safe */}
+        {searchMode !== 'compatibility' && (
+          <View className={cn('px-5 py-3', isDark ? 'bg-slate-900' : 'bg-slate-50')}>
+            <View className={cn('flex-row items-center px-4 py-3 rounded-xl', isDark ? 'bg-slate-800' : 'bg-white')}>
+              <Search size={18} color={isDark ? '#64748B' : '#94A3B8'} />
+              <TextInput
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                placeholder={`Search ${searchMode}...`}
+                placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
+                style={{ flex: 1, marginLeft: 10, fontSize: 16, color: isDark ? '#fff' : '#0F172A' }}
+                returnKeyType="search"
+                onSubmitEditing={Keyboard.dismiss}
+              />
+              {searchQuery ? (
+                <Pressable onPress={() => setSearchQuery('')}>
+                  <X size={18} color={isDark ? '#64748B' : '#94A3B8'} />
+                </Pressable>
+              ) : null}
+            </View>
+          </View>
+        )}
 
         {/* Content */}
         <ScrollView
@@ -745,211 +464,226 @@ export default function SearchScreen() {
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
         >
-          {/* Filter Toggle */}
-          <View className="px-5 pt-4">
-            <Pressable
-              onPress={() => setShowFilters(!showFilters)}
-              className={cn(
-                'flex-row items-center px-4 py-2 rounded-lg self-start',
-                hasActiveFilters
-                  ? 'bg-sky-500'
-                  : isDark
-                  ? 'bg-slate-800'
-                  : 'bg-white'
-              )}
-            >
-              <Filter
-                size={16}
-                color={hasActiveFilters ? 'white' : isDark ? '#94A3B8' : '#64748B'}
-              />
-              <Text
-                className={cn(
-                  'text-sm font-medium ml-2',
-                  hasActiveFilters
-                    ? 'text-white'
-                    : isDark
-                    ? 'text-slate-300'
-                    : 'text-slate-600'
-                )}
-              >
-                Filters {hasActiveFilters ? '(Active)' : ''}
+          {/* Compatibility mode */}
+          {searchMode === 'compatibility' && (
+            <View className="px-5 pt-4">
+              <Text className={cn('text-sm mb-4', isDark ? 'text-slate-400' : 'text-slate-500')}>
+                Tap the sparkle icon ✦ on any fish to check its compatibility with another fish.
               </Text>
-            </Pressable>
-          </View>
-
-          {/* Filters Panel */}
-          {showFilters && (
-            <View
-              className={cn(
-                'mx-5 mt-3 p-4 rounded-xl',
-                isDark ? 'bg-slate-800' : 'bg-white'
-              )}
-            >
-              {searchMode === 'fish' ? (
-                <ScrollView style={{ maxHeight: 400 }} showsVerticalScrollIndicator={false}>
-                  <Text className={cn('text-sm font-semibold mb-2', isDark ? 'text-slate-300' : 'text-slate-600')}>
-                    Water Type
-                  </Text>
-                  <View className="flex-row flex-wrap mb-3">
-                    <FilterChip label="Freshwater" isActive={selectedWaterType === 'freshwater'} onPress={() => setSelectedWaterType(selectedWaterType === 'freshwater' ? null : 'freshwater')} isDark={isDark} />
-                    <FilterChip label="Saltwater" isActive={selectedWaterType === 'saltwater'} onPress={() => setSelectedWaterType(selectedWaterType === 'saltwater' ? null : 'saltwater')} isDark={isDark} />
-                  </View>
-
-                  <Text className={cn('text-sm font-semibold mb-2', isDark ? 'text-slate-300' : 'text-slate-600')}>
-                    Temperament
-                  </Text>
-                  <View className="flex-row flex-wrap mb-3">
-                    <FilterChip label="Peaceful" isActive={selectedTemperament === 'peaceful'} onPress={() => setSelectedTemperament(selectedTemperament === 'peaceful' ? null : 'peaceful')} isDark={isDark} />
-                    <FilterChip label="Semi-Aggressive" isActive={selectedTemperament === 'semi-aggressive'} onPress={() => setSelectedTemperament(selectedTemperament === 'semi-aggressive' ? null : 'semi-aggressive')} isDark={isDark} />
-                    <FilterChip label="Aggressive" isActive={selectedTemperament === 'aggressive'} onPress={() => setSelectedTemperament(selectedTemperament === 'aggressive' ? null : 'aggressive')} isDark={isDark} />
-                  </View>
-
-                  <Text className={cn('text-sm font-semibold mb-2', isDark ? 'text-slate-300' : 'text-slate-600')}>
-                    Care Level
-                  </Text>
-                  <View className="flex-row flex-wrap mb-3">
-                    <FilterChip label="Beginner" isActive={selectedCareLevel === 'beginner'} onPress={() => setSelectedCareLevel(selectedCareLevel === 'beginner' ? null : 'beginner')} isDark={isDark} />
-                    <FilterChip label="Intermediate" isActive={selectedCareLevel === 'intermediate'} onPress={() => setSelectedCareLevel(selectedCareLevel === 'intermediate' ? null : 'intermediate')} isDark={isDark} />
-                    <FilterChip label="Advanced" isActive={selectedCareLevel === 'advanced'} onPress={() => setSelectedCareLevel(selectedCareLevel === 'advanced' ? null : 'advanced')} isDark={isDark} />
-                  </View>
-
-                  <Text className={cn('text-sm font-semibold mb-2', isDark ? 'text-slate-300' : 'text-slate-600')}>
-                    Tank Zone
-                  </Text>
-                  <View className="flex-row flex-wrap mb-3">
-                    <FilterChip label="Top" isActive={selectedTankZone === 'top'} onPress={() => setSelectedTankZone(selectedTankZone === 'top' ? null : 'top')} isDark={isDark} />
-                    <FilterChip label="Middle" isActive={selectedTankZone === 'middle'} onPress={() => setSelectedTankZone(selectedTankZone === 'middle' ? null : 'middle')} isDark={isDark} />
-                    <FilterChip label="Bottom" isActive={selectedTankZone === 'bottom'} onPress={() => setSelectedTankZone(selectedTankZone === 'bottom' ? null : 'bottom')} isDark={isDark} />
-                    <FilterChip label="All Levels" isActive={selectedTankZone === 'all'} onPress={() => setSelectedTankZone(selectedTankZone === 'all' ? null : 'all')} isDark={isDark} />
-                  </View>
-
-                  <Text className={cn('text-sm font-semibold mb-2', isDark ? 'text-slate-300' : 'text-slate-600')}>
-                    Min Tank Size
-                  </Text>
-                  <View className="flex-row flex-wrap mb-3">
-                    <FilterChip label="Small (≤20g)" isActive={selectedMinTankSize === 'small'} onPress={() => setSelectedMinTankSize(selectedMinTankSize === 'small' ? null : 'small')} isDark={isDark} />
-                    <FilterChip label="Medium (21-55g)" isActive={selectedMinTankSize === 'medium'} onPress={() => setSelectedMinTankSize(selectedMinTankSize === 'medium' ? null : 'medium')} isDark={isDark} />
-                    <FilterChip label="Large (55g+)" isActive={selectedMinTankSize === 'large'} onPress={() => setSelectedMinTankSize(selectedMinTankSize === 'large' ? null : 'large')} isDark={isDark} />
-                  </View>
-
-                  <Text className={cn('text-sm font-semibold mb-2', isDark ? 'text-slate-300' : 'text-slate-600')}>
-                    Max Fish Size
-                  </Text>
-                  <View className="flex-row flex-wrap">
-                    <FilterChip label="Small (≤3in)" isActive={selectedMaxSize === 'small'} onPress={() => setSelectedMaxSize(selectedMaxSize === 'small' ? null : 'small')} isDark={isDark} />
-                    <FilterChip label="Medium (3-6in)" isActive={selectedMaxSize === 'medium'} onPress={() => setSelectedMaxSize(selectedMaxSize === 'medium' ? null : 'medium')} isDark={isDark} />
-                    <FilterChip label="Large (6in+)" isActive={selectedMaxSize === 'large'} onPress={() => setSelectedMaxSize(selectedMaxSize === 'large' ? null : 'large')} isDark={isDark} />
-                  </View>
-                </ScrollView>
-              ) : (
-                <ScrollView style={{ maxHeight: 400 }} showsVerticalScrollIndicator={false}>
-                  <Text className={cn('text-sm font-semibold mb-2', isDark ? 'text-slate-300' : 'text-slate-600')}>
-                    Difficulty
-                  </Text>
-                  <View className="flex-row flex-wrap mb-3">
-                    <FilterChip label="Easy" isActive={selectedPlantDifficulty === 'easy'} onPress={() => setSelectedPlantDifficulty(selectedPlantDifficulty === 'easy' ? null : 'easy')} isDark={isDark} />
-                    <FilterChip label="Moderate" isActive={selectedPlantDifficulty === 'moderate'} onPress={() => setSelectedPlantDifficulty(selectedPlantDifficulty === 'moderate' ? null : 'moderate')} isDark={isDark} />
-                    <FilterChip label="Difficult" isActive={selectedPlantDifficulty === 'difficult'} onPress={() => setSelectedPlantDifficulty(selectedPlantDifficulty === 'difficult' ? null : 'difficult')} isDark={isDark} />
-                  </View>
-
-                  <Text className={cn('text-sm font-semibold mb-2', isDark ? 'text-slate-300' : 'text-slate-600')}>
-                    Lighting
-                  </Text>
-                  <View className="flex-row flex-wrap mb-3">
-                    <FilterChip label="Low" isActive={selectedPlantLighting === 'low'} onPress={() => setSelectedPlantLighting(selectedPlantLighting === 'low' ? null : 'low')} isDark={isDark} />
-                    <FilterChip label="Medium" isActive={selectedPlantLighting === 'medium'} onPress={() => setSelectedPlantLighting(selectedPlantLighting === 'medium' ? null : 'medium')} isDark={isDark} />
-                    <FilterChip label="High" isActive={selectedPlantLighting === 'high'} onPress={() => setSelectedPlantLighting(selectedPlantLighting === 'high' ? null : 'high')} isDark={isDark} />
-                  </View>
-
-                  <Text className={cn('text-sm font-semibold mb-2', isDark ? 'text-slate-300' : 'text-slate-600')}>
-                    Placement
-                  </Text>
-                  <View className="flex-row flex-wrap mb-3">
-                    <FilterChip label="Foreground" isActive={selectedPlantPlacement === 'foreground'} onPress={() => setSelectedPlantPlacement(selectedPlantPlacement === 'foreground' ? null : 'foreground')} isDark={isDark} />
-                    <FilterChip label="Midground" isActive={selectedPlantPlacement === 'midground'} onPress={() => setSelectedPlantPlacement(selectedPlantPlacement === 'midground' ? null : 'midground')} isDark={isDark} />
-                    <FilterChip label="Background" isActive={selectedPlantPlacement === 'background'} onPress={() => setSelectedPlantPlacement(selectedPlantPlacement === 'background' ? null : 'background')} isDark={isDark} />
-                    <FilterChip label="Floating" isActive={selectedPlantPlacement === 'floating'} onPress={() => setSelectedPlantPlacement(selectedPlantPlacement === 'floating' ? null : 'floating')} isDark={isDark} />
-                  </View>
-
-                  <Text className={cn('text-sm font-semibold mb-2', isDark ? 'text-slate-300' : 'text-slate-600')}>
-                    Growth Rate
-                  </Text>
-                  <View className="flex-row flex-wrap mb-3">
-                    <FilterChip label="Slow" isActive={selectedGrowthRate === 'slow'} onPress={() => setSelectedGrowthRate(selectedGrowthRate === 'slow' ? null : 'slow')} isDark={isDark} />
-                    <FilterChip label="Moderate" isActive={selectedGrowthRate === 'moderate'} onPress={() => setSelectedGrowthRate(selectedGrowthRate === 'moderate' ? null : 'moderate')} isDark={isDark} />
-                    <FilterChip label="Fast" isActive={selectedGrowthRate === 'fast'} onPress={() => setSelectedGrowthRate(selectedGrowthRate === 'fast' ? null : 'fast')} isDark={isDark} />
-                  </View>
-
-                  <Text className={cn('text-sm font-semibold mb-2', isDark ? 'text-slate-300' : 'text-slate-600')}>
-                    CO2 Requirement
-                  </Text>
-                  <View className="flex-row flex-wrap">
-                    <FilterChip label="No CO2 Needed" isActive={selectedCO2 === false} onPress={() => setSelectedCO2(selectedCO2 === false ? null : false)} isDark={isDark} />
-                    <FilterChip label="CO2 Required" isActive={selectedCO2 === true} onPress={() => setSelectedCO2(selectedCO2 === true ? null : true)} isDark={isDark} />
-                  </View>
-                </ScrollView>
-              )}
-
-              {hasActiveFilters && (
-                <Pressable onPress={clearFilters} className="mt-3">
-                  <Text className="text-sky-500 text-sm font-medium">Clear All Filters</Text>
-                </Pressable>
-              )}
+              <Pressable
+                onPress={() => router.push('/compatibility-chart')}
+                className={cn('p-5 rounded-2xl items-center', isDark ? 'bg-slate-800' : 'bg-white')}
+              >
+                <Grid3X3 size={40} color="#0EA5E9" />
+                <Text className={cn('text-base font-bold mt-3 mb-1', isDark ? 'text-white' : 'text-slate-900')}>Full Compatibility Matrix</Text>
+                <Text className={cn('text-sm text-center mb-4', isDark ? 'text-slate-400' : 'text-slate-500')}>
+                  Compare up to 5 fish simultaneously in an interactive grid
+                </Text>
+                <View className="bg-sky-500 px-6 py-3 rounded-xl">
+                  <Text className="text-white font-bold">Open Chart</Text>
+                </View>
+              </Pressable>
             </View>
           )}
 
-          {/* Results */}
-          <View className="px-5 pt-4">
-            <View className="flex-row items-center justify-between mb-4">
-              <Text className={cn('text-sm', isDark ? 'text-slate-400' : 'text-slate-500')}>
-                {searchMode === 'fish' ? `${filteredFish.length} fish found` : `${filteredPlants.length} plants found`}
-              </Text>
-              {searchMode === 'fish' && (
-                <View className="flex-row items-center">
-                  <Sparkles size={14} color="#8B5CF6" />
-                  <Text className={cn('text-xs ml-1', isDark ? 'text-slate-400' : 'text-slate-500')}>
-                    Tap sparkle to check compatibility
+          {searchMode !== 'compatibility' && (
+            <>
+              {/* Filter Toggle */}
+              <View className="px-5 pt-4">
+                <Pressable
+                  onPress={() => setShowFilters(!showFilters)}
+                  className={cn(
+                    'flex-row items-center px-4 py-2 rounded-lg self-start',
+                    hasActiveFilters
+                      ? 'bg-sky-500'
+                      : isDark
+                      ? 'bg-slate-800'
+                      : 'bg-white'
+                  )}
+                >
+                  <Filter
+                    size={16}
+                    color={hasActiveFilters ? 'white' : isDark ? '#94A3B8' : '#64748B'}
+                  />
+                  <Text
+                    className={cn(
+                      'text-sm font-medium ml-2',
+                      hasActiveFilters
+                        ? 'text-white'
+                        : isDark
+                        ? 'text-slate-300'
+                        : 'text-slate-600'
+                    )}
+                  >
+                    Filters {hasActiveFilters ? '(Active)' : ''}
                   </Text>
+                </Pressable>
+              </View>
+
+              {/* Filters Panel */}
+              {showFilters && (
+                <View
+                  className={cn(
+                    'mx-5 mt-3 p-4 rounded-xl',
+                    isDark ? 'bg-slate-800' : 'bg-white'
+                  )}
+                >
+                  {searchMode === 'fish' ? (
+                    <ScrollView style={{ maxHeight: 400 }} showsVerticalScrollIndicator={false}>
+                      <Text className={cn('text-sm font-semibold mb-2', isDark ? 'text-slate-300' : 'text-slate-600')}>
+                        Water Type
+                      </Text>
+                      <View className="flex-row flex-wrap mb-3">
+                        <FilterChip label="Freshwater" isActive={selectedWaterType === 'freshwater'} onPress={() => setSelectedWaterType(selectedWaterType === 'freshwater' ? null : 'freshwater')} isDark={isDark} />
+                        <FilterChip label="Saltwater" isActive={selectedWaterType === 'saltwater'} onPress={() => setSelectedWaterType(selectedWaterType === 'saltwater' ? null : 'saltwater')} isDark={isDark} />
+                      </View>
+
+                      <Text className={cn('text-sm font-semibold mb-2', isDark ? 'text-slate-300' : 'text-slate-600')}>
+                        Temperament
+                      </Text>
+                      <View className="flex-row flex-wrap mb-3">
+                        <FilterChip label="Peaceful" isActive={selectedTemperament === 'peaceful'} onPress={() => setSelectedTemperament(selectedTemperament === 'peaceful' ? null : 'peaceful')} isDark={isDark} />
+                        <FilterChip label="Semi-Aggressive" isActive={selectedTemperament === 'semi-aggressive'} onPress={() => setSelectedTemperament(selectedTemperament === 'semi-aggressive' ? null : 'semi-aggressive')} isDark={isDark} />
+                        <FilterChip label="Aggressive" isActive={selectedTemperament === 'aggressive'} onPress={() => setSelectedTemperament(selectedTemperament === 'aggressive' ? null : 'aggressive')} isDark={isDark} />
+                      </View>
+
+                      <Text className={cn('text-sm font-semibold mb-2', isDark ? 'text-slate-300' : 'text-slate-600')}>
+                        Care Level
+                      </Text>
+                      <View className="flex-row flex-wrap mb-3">
+                        <FilterChip label="Beginner" isActive={selectedCareLevel === 'beginner'} onPress={() => setSelectedCareLevel(selectedCareLevel === 'beginner' ? null : 'beginner')} isDark={isDark} />
+                        <FilterChip label="Intermediate" isActive={selectedCareLevel === 'intermediate'} onPress={() => setSelectedCareLevel(selectedCareLevel === 'intermediate' ? null : 'intermediate')} isDark={isDark} />
+                        <FilterChip label="Advanced" isActive={selectedCareLevel === 'advanced'} onPress={() => setSelectedCareLevel(selectedCareLevel === 'advanced' ? null : 'advanced')} isDark={isDark} />
+                      </View>
+
+                      <Text className={cn('text-sm font-semibold mb-2', isDark ? 'text-slate-300' : 'text-slate-600')}>
+                        Tank Zone
+                      </Text>
+                      <View className="flex-row flex-wrap mb-3">
+                        <FilterChip label="Top" isActive={selectedTankZone === 'top'} onPress={() => setSelectedTankZone(selectedTankZone === 'top' ? null : 'top')} isDark={isDark} />
+                        <FilterChip label="Middle" isActive={selectedTankZone === 'middle'} onPress={() => setSelectedTankZone(selectedTankZone === 'middle' ? null : 'middle')} isDark={isDark} />
+                        <FilterChip label="Bottom" isActive={selectedTankZone === 'bottom'} onPress={() => setSelectedTankZone(selectedTankZone === 'bottom' ? null : 'bottom')} isDark={isDark} />
+                        <FilterChip label="All Levels" isActive={selectedTankZone === 'all'} onPress={() => setSelectedTankZone(selectedTankZone === 'all' ? null : 'all')} isDark={isDark} />
+                      </View>
+
+                      <Text className={cn('text-sm font-semibold mb-2', isDark ? 'text-slate-300' : 'text-slate-600')}>
+                        Min Tank Size
+                      </Text>
+                      <View className="flex-row flex-wrap mb-3">
+                        <FilterChip label="Small (≤20g)" isActive={selectedMinTankSize === 'small'} onPress={() => setSelectedMinTankSize(selectedMinTankSize === 'small' ? null : 'small')} isDark={isDark} />
+                        <FilterChip label="Medium (21-55g)" isActive={selectedMinTankSize === 'medium'} onPress={() => setSelectedMinTankSize(selectedMinTankSize === 'medium' ? null : 'medium')} isDark={isDark} />
+                        <FilterChip label="Large (55g+)" isActive={selectedMinTankSize === 'large'} onPress={() => setSelectedMinTankSize(selectedMinTankSize === 'large' ? null : 'large')} isDark={isDark} />
+                      </View>
+
+                      <Text className={cn('text-sm font-semibold mb-2', isDark ? 'text-slate-300' : 'text-slate-600')}>
+                        Max Fish Size
+                      </Text>
+                      <View className="flex-row flex-wrap">
+                        <FilterChip label="Small (≤3in)" isActive={selectedMaxSize === 'small'} onPress={() => setSelectedMaxSize(selectedMaxSize === 'small' ? null : 'small')} isDark={isDark} />
+                        <FilterChip label="Medium (3-6in)" isActive={selectedMaxSize === 'medium'} onPress={() => setSelectedMaxSize(selectedMaxSize === 'medium' ? null : 'medium')} isDark={isDark} />
+                        <FilterChip label="Large (6in+)" isActive={selectedMaxSize === 'large'} onPress={() => setSelectedMaxSize(selectedMaxSize === 'large' ? null : 'large')} isDark={isDark} />
+                      </View>
+                    </ScrollView>
+                  ) : (
+                    <ScrollView style={{ maxHeight: 400 }} showsVerticalScrollIndicator={false}>
+                      <Text className={cn('text-sm font-semibold mb-2', isDark ? 'text-slate-300' : 'text-slate-600')}>
+                        Difficulty
+                      </Text>
+                      <View className="flex-row flex-wrap mb-3">
+                        <FilterChip label="Easy" isActive={selectedPlantDifficulty === 'easy'} onPress={() => setSelectedPlantDifficulty(selectedPlantDifficulty === 'easy' ? null : 'easy')} isDark={isDark} />
+                        <FilterChip label="Moderate" isActive={selectedPlantDifficulty === 'moderate'} onPress={() => setSelectedPlantDifficulty(selectedPlantDifficulty === 'moderate' ? null : 'moderate')} isDark={isDark} />
+                        <FilterChip label="Difficult" isActive={selectedPlantDifficulty === 'difficult'} onPress={() => setSelectedPlantDifficulty(selectedPlantDifficulty === 'difficult' ? null : 'difficult')} isDark={isDark} />
+                      </View>
+
+                      <Text className={cn('text-sm font-semibold mb-2', isDark ? 'text-slate-300' : 'text-slate-600')}>
+                        Lighting
+                      </Text>
+                      <View className="flex-row flex-wrap mb-3">
+                        <FilterChip label="Low" isActive={selectedPlantLighting === 'low'} onPress={() => setSelectedPlantLighting(selectedPlantLighting === 'low' ? null : 'low')} isDark={isDark} />
+                        <FilterChip label="Medium" isActive={selectedPlantLighting === 'medium'} onPress={() => setSelectedPlantLighting(selectedPlantLighting === 'medium' ? null : 'medium')} isDark={isDark} />
+                        <FilterChip label="High" isActive={selectedPlantLighting === 'high'} onPress={() => setSelectedPlantLighting(selectedPlantLighting === 'high' ? null : 'high')} isDark={isDark} />
+                      </View>
+
+                      <Text className={cn('text-sm font-semibold mb-2', isDark ? 'text-slate-300' : 'text-slate-600')}>
+                        Placement
+                      </Text>
+                      <View className="flex-row flex-wrap mb-3">
+                        <FilterChip label="Foreground" isActive={selectedPlantPlacement === 'foreground'} onPress={() => setSelectedPlantPlacement(selectedPlantPlacement === 'foreground' ? null : 'foreground')} isDark={isDark} />
+                        <FilterChip label="Midground" isActive={selectedPlantPlacement === 'midground'} onPress={() => setSelectedPlantPlacement(selectedPlantPlacement === 'midground' ? null : 'midground')} isDark={isDark} />
+                        <FilterChip label="Background" isActive={selectedPlantPlacement === 'background'} onPress={() => setSelectedPlantPlacement(selectedPlantPlacement === 'background' ? null : 'background')} isDark={isDark} />
+                        <FilterChip label="Floating" isActive={selectedPlantPlacement === 'floating'} onPress={() => setSelectedPlantPlacement(selectedPlantPlacement === 'floating' ? null : 'floating')} isDark={isDark} />
+                      </View>
+
+                      <Text className={cn('text-sm font-semibold mb-2', isDark ? 'text-slate-300' : 'text-slate-600')}>
+                        Growth Rate
+                      </Text>
+                      <View className="flex-row flex-wrap mb-3">
+                        <FilterChip label="Slow" isActive={selectedGrowthRate === 'slow'} onPress={() => setSelectedGrowthRate(selectedGrowthRate === 'slow' ? null : 'slow')} isDark={isDark} />
+                        <FilterChip label="Moderate" isActive={selectedGrowthRate === 'moderate'} onPress={() => setSelectedGrowthRate(selectedGrowthRate === 'moderate' ? null : 'moderate')} isDark={isDark} />
+                        <FilterChip label="Fast" isActive={selectedGrowthRate === 'fast'} onPress={() => setSelectedGrowthRate(selectedGrowthRate === 'fast' ? null : 'fast')} isDark={isDark} />
+                      </View>
+
+                      <Text className={cn('text-sm font-semibold mb-2', isDark ? 'text-slate-300' : 'text-slate-600')}>
+                        CO2 Requirement
+                      </Text>
+                      <View className="flex-row flex-wrap">
+                        <FilterChip label="No CO2 Needed" isActive={selectedCO2 === false} onPress={() => setSelectedCO2(selectedCO2 === false ? null : false)} isDark={isDark} />
+                        <FilterChip label="CO2 Required" isActive={selectedCO2 === true} onPress={() => setSelectedCO2(selectedCO2 === true ? null : true)} isDark={isDark} />
+                      </View>
+                    </ScrollView>
+                  )}
+
+                  {hasActiveFilters && (
+                    <Pressable onPress={clearFilters} className="mt-3">
+                      <Text className="text-sky-500 text-sm font-medium">Clear All Filters</Text>
+                    </Pressable>
+                  )}
                 </View>
               )}
-            </View>
 
-            {searchMode === 'fish' ? (
-              filteredFish.map((fish) => (
-                <FishListItem
-                  key={fish.id}
-                  fish={fish}
-                  onPress={() => router.push(`/fish/${fish.id}`)}
-                  onCheckCompatibility={() => handleCheckCompatibility(fish)}
-                  isDark={isDark}
-                />
-              ))
-            ) : (
-              filteredPlants.map((plant) => (
-                <PlantListItem
-                  key={plant.id}
-                  plant={plant}
-                  onPress={() => router.push(`/plant/${plant.id}`)}
-                  isDark={isDark}
-                />
-              ))
-            )}
-          </View>
+              {/* Results */}
+              <View className="px-5 pt-4">
+                <View className="flex-row items-center justify-between mb-4">
+                  <Text className={cn('text-sm', isDark ? 'text-slate-400' : 'text-slate-500')}>
+                    {searchMode === 'fish' ? `${filteredFish.length} fish found` : `${filteredPlants.length} plants found`}
+                  </Text>
+                  {searchMode === 'fish' && (
+                    <View className="flex-row items-center">
+                      <Sparkles size={14} color="#8B5CF6" />
+                      <Text className={cn('text-xs ml-1', isDark ? 'text-slate-400' : 'text-slate-500')}>
+                        Tap sparkle to check compatibility
+                      </Text>
+                    </View>
+                  )}
+                </View>
+
+                {searchMode === 'fish' ? (
+                  filteredFish.map((fish) => (
+                    <FishListItem
+                      key={fish.id}
+                      fish={fish}
+                      onPress={() => router.push(`/fish/${fish.id}`)}
+                      onCheckCompatibility={() => handleCheckCompatibility(fish)}
+                      isDark={isDark}
+                    />
+                  ))
+                ) : (
+                  filteredPlants.map((plant) => (
+                    <PlantListItem
+                      key={plant.id}
+                      plant={plant}
+                      onPress={() => router.push(`/plant/${plant.id}`)}
+                      isDark={isDark}
+                    />
+                  ))
+                )}
+              </View>
+            </>
+          )}
 
           <View className="h-8" />
         </ScrollView>
       </SafeAreaView>
-
-      {/* Compatibility Modal */}
-      <CompatibilityModal
-        visible={compatibilityModalVisible}
-        onClose={() => {
-          setCompatibilityModalVisible(false);
-          setSelectedFishForCompatibility(null);
-        }}
-        selectedFish={selectedFishForCompatibility}
-        isDark={isDark}
-      />
     </View>
   );
 }
