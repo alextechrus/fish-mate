@@ -27,6 +27,9 @@ function RootLayoutNav({ colorScheme }: { colorScheme: 'light' | 'dark' | null |
         <Stack.Screen name="fish/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="plant/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="compatibility-chart" options={{ headerShown: false }} />
+        <Stack.Screen name="compatibility-check" options={{ headerShown: false }} />
+        <Stack.Screen name="tank/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="add-to-tank" options={{ headerShown: false }} />
         <Stack.Screen name="auth/login" options={{ headerShown: false }} />
         <Stack.Screen name="auth/register" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
