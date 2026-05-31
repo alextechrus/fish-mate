@@ -33,6 +33,10 @@ export interface WaterChangeReminder {
 export interface ExtendedTankSetup extends TankSetup {
   activities: TankActivity[];
   waterChangeReminder?: WaterChangeReminder;
+  lastCleanedAt?: string;
+  generatedImageUrl?: string;
+  generatedImageDirtyUrl?: string;
+  isPublic?: boolean;
 }
 
 interface TankState {
@@ -56,6 +60,19 @@ interface TankState {
   addActivity: (tankId: string, activity: Omit<TankActivity, 'id' | 'timestamp'>) => void;
   setWaterChangeReminder: (tankId: string, reminder: WaterChangeReminder) => void;
   logWaterChange: (tankId: string) => void;
+  confirmCleaned: (tankId: string) => void;
+  updateTankImage: (tankId: string, url: string, isDirty: boolean) => void;
+  toggleTankPublic: (tankId: string) => void;
+}
+
+export function getTankCleanliness(tank: ExtendedTankSetup): 'clean' | 'due-soon' | 'overdue' {
+  if (!tank.lastCleanedAt) {
+    return tank.fishIds.length > 0 ? 'due-soon' : 'clean';
+  }
+  const daysSince = (Date.now() - new Date(tank.lastCleanedAt).getTime()) / (1000 * 60 * 60 * 24);
+  if (daysSince > 14) return 'overdue';
+  if (daysSince > 10) return 'due-soon';
+  return 'clean';
 }
 
 export const useTankStore = create<TankState>()(
@@ -276,6 +293,33 @@ export const useTankStore = create<TankState>()(
                 : undefined,
             };
           }),
+        }));
+      },
+
+      confirmCleaned: (tankId) => {
+        set(state => ({
+          tanks: state.tanks.map(t =>
+            t.id === tankId ? { ...t, lastCleanedAt: new Date().toISOString() } : t
+          ),
+        }));
+      },
+
+      updateTankImage: (tankId, url, isDirty) => {
+        set(state => ({
+          tanks: state.tanks.map(t => {
+            if (t.id !== tankId) return t;
+            return isDirty
+              ? { ...t, generatedImageDirtyUrl: url }
+              : { ...t, generatedImageUrl: url };
+          }),
+        }));
+      },
+
+      toggleTankPublic: (tankId) => {
+        set(state => ({
+          tanks: state.tanks.map(t =>
+            t.id === tankId ? { ...t, isPublic: !t.isPublic } : t
+          ),
         }));
       },
     }),
