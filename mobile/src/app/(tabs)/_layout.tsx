@@ -1,6 +1,7 @@
+// src/app/(tabs)/_layout.tsx
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { Home, Search, Container, Settings } from 'lucide-react-native';
+import { Home, Compass, Search, Container, Settings } from 'lucide-react-native';
 import { useColorScheme } from '@/lib/useColorScheme';
 
 export default function TabLayout() {
@@ -12,7 +13,7 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: '#0EA5E9',
-        tabBarInactiveTintColor: isDark ? '#64748B' : '#94A3B8',
+        tabBarInactiveTintColor: isDark ? '#475569' : '#94A3B8',
         tabBarStyle: {
           backgroundColor: isDark ? '#0F172A' : '#FFFFFF',
           borderTopColor: isDark ? '#1E293B' : '#E2E8F0',
@@ -36,6 +37,13 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="explore"
+        options={{
+          title: 'Explore',
+          tabBarIcon: ({ color, size }) => <Compass size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="search"
         options={{
           title: 'Search',
@@ -56,19 +64,9 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => <Settings size={size} color={color} />,
         }}
       />
-      {/* Hide old screens but keep them as routes within tabs */}
-      <Tabs.Screen
-        name="browse"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="compatibility"
-        options={{
-          href: null,
-        }}
-      />
+      {/* Hidden legacy routes */}
+      <Tabs.Screen name="browse" options={{ href: null }} />
+      <Tabs.Screen name="compatibility" options={{ href: null }} />
     </Tabs>
   );
 }
