@@ -1,82 +1,32 @@
-import React, { useState, useMemo } from 'react';
+// src/app/(tabs)/my-tank.tsx
+import React, { useState, useMemo, useCallback } from 'react';
 import {
-  View,
-  Text,
-  ScrollView,
-  Pressable,
-  Image,
-  TextInput,
-  Modal,
-  KeyboardAvoidingView,
-  TouchableWithoutFeedback,
-  Keyboard,
-  Platform,
+  View, Text, ScrollView, Pressable, Image, Modal,
+  TextInput, TouchableWithoutFeedback, Keyboard,
+  KeyboardAvoidingView, Platform, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import Animated, { FadeIn, FadeOut, useAnimatedStyle, withSpring, useSharedValue } from 'react-native-reanimated';
 import {
-  Container,
-  Plus,
-  Trash2,
-  Fish as FishIcon,
-  Droplets,
-  AlertTriangle,
-  CheckCircle,
-  X,
-  ChevronRight,
-  PoundSterling,
-  Lightbulb,
-  ArrowRight,
-  Leaf,
-  Star,
-  Info,
-  Pencil,
+  Plus, Trash2, Fish as FishIcon, Leaf, AlertTriangle,
+  CheckCircle, X, Star, Pencil, Droplets, RefreshCw,
+  Container, Camera,
 } from 'lucide-react-native';
 import { useColorScheme } from '@/lib/useColorScheme';
-import { useTankStore } from '@/lib/state/tank-store';
-import { getFishById, fishDatabase } from '@/lib/data/fish-database';
+import { useTankStore, getTankCleanliness, ExtendedTankSetup } from '@/lib/state/tank-store';
+import { getFishById } from '@/lib/data/fish-database';
 import { getPlantById } from '@/lib/data/plant-database';
-import type { Plant } from '@/lib/data/plant-database';
-import { checkMultipleFishCompatibility, getSuggestedCompatibleFish } from '@/lib/utils/compatibility';
-import { WaterType, Fish, TankSetup, CompatibilityResult } from '@/lib/types/fish';
+import { WaterType, Fish } from '@/lib/types/fish';
 import { cn } from '@/lib/cn';
-import { useFishImage, usePlantImage } from '@/lib/hooks/useImageUrl';
-import { getImageSource } from '@/lib/utils/image-source';
+import { generateTankImage } from '@/lib/services/image-generation';
 
-// Fish image component with auto-generation
-const FishImageDisplay = ({ fish }: { fish: Fish }) => {
-  const imageSource = useFishImage(fish.id, fish.imageUrl, fish.commonName, fish.scientificName);
-  return (
-    <Image
-      source={imageSource}
-      className="w-14 h-14 rounded-xl"
-      resizeMode="cover"
-    />
-  );
-};
-
-// Plant image component with auto-generation
-const PlantImageDisplay = ({ plant }: { plant: Plant }) => {
-  const imageSource = usePlantImage(plant.id, plant.imageUrl, plant.commonName, plant.scientificName);
-  return (
-    <Image
-      source={imageSource}
-      className="w-14 h-14 rounded-xl"
-      resizeMode="cover"
-    />
-  );
-};
+// ─── Create Tank Modal ───────────────────────────────────────────────────────
 
 const CreateTankModal = ({
-  visible,
-  onClose,
-  onSubmit,
-  isDark,
+  visible, onClose, onSubmit, isDark,
 }: {
-  visible: boolean;
-  onClose: () => void;
+  visible: boolean; onClose: () => void;
   onSubmit: (name: string, size: number, waterType: WaterType) => void;
   isDark: boolean;
 }) => {
@@ -87,9 +37,7 @@ const CreateTankModal = ({
   const handleSubmit = () => {
     if (name.trim() && size) {
       onSubmit(name.trim(), parseInt(size, 10), waterType);
-      setName('');
-      setSize('');
-      setWaterType('freshwater');
+      setName(''); setSize(''); setWaterType('freshwater');
       onClose();
     }
   };
@@ -97,150 +45,38 @@ const CreateTankModal = ({
   return (
     <Modal visible={visible} transparent animationType="fade">
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View className="flex-1 bg-black/50">
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            className="flex-1 justify-center pb-32"
-          >
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, justifyContent: 'center', paddingBottom: 60 }}>
             <TouchableWithoutFeedback>
-              <View
-                className={cn(
-                  'mx-4 rounded-3xl p-6',
-                  isDark ? 'bg-slate-800' : 'bg-white'
-                )}
-              >
-                <View className="flex-row justify-between items-center mb-6">
-                  <Text
-                    className={cn(
-                      'text-xl font-bold',
-                      isDark ? 'text-white' : 'text-slate-900'
-                    )}
-                  >
-                    Create New Tank
-                  </Text>
-                  <Pressable onPress={onClose}>
-                    <X size={24} color={isDark ? '#94A3B8' : '#64748B'} />
-                  </Pressable>
+              <View className={cn('mx-4 rounded-3xl p-6', isDark ? 'bg-slate-800' : 'bg-white')}>
+                <View className="flex-row justify-between items-center mb-5">
+                  <Text className={cn('text-xl font-bold', isDark ? 'text-white' : 'text-slate-900')}>Create New Tank</Text>
+                  <Pressable onPress={onClose}><X size={24} color={isDark ? '#94A3B8' : '#64748B'} /></Pressable>
                 </View>
-
-                {/* Tank Name */}
-                <Text
-                  className={cn(
-                    'text-sm font-semibold mb-2',
-                    isDark ? 'text-slate-300' : 'text-slate-600'
-                  )}
-                >
-                  Tank Name
-                </Text>
-                <TextInput
-                  value={name}
-                  onChangeText={setName}
-                  placeholder="My Aquarium"
+                <Text className={cn('text-sm font-semibold mb-2', isDark ? 'text-slate-300' : 'text-slate-600')}>Tank Name</Text>
+                <TextInput value={name} onChangeText={setName} placeholder="My Aquarium"
                   placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
-                  style={{
-                    paddingHorizontal: 16,
-                    paddingVertical: 12,
-                    borderRadius: 12,
-                    fontSize: 16,
-                    marginBottom: 16,
-                    backgroundColor: isDark ? '#334155' : '#F1F5F9',
-                    color: isDark ? '#FFFFFF' : '#0F172A',
-                  }}
+                  style={{ paddingHorizontal: 16, paddingVertical: 12, borderRadius: 12, fontSize: 16, marginBottom: 16, backgroundColor: isDark ? '#334155' : '#F1F5F9', color: isDark ? '#fff' : '#0F172A' }}
                 />
-
-                {/* Tank Size */}
-                <Text
-                  className={cn(
-                    'text-sm font-semibold mb-2',
-                    isDark ? 'text-slate-300' : 'text-slate-600'
-                  )}
-                >
-                  Tank Size (Gallons)
-                </Text>
-                <TextInput
-                  value={size}
-                  onChangeText={setSize}
-                  placeholder="20"
+                <Text className={cn('text-sm font-semibold mb-2', isDark ? 'text-slate-300' : 'text-slate-600')}>Tank Size (Gallons)</Text>
+                <TextInput value={size} onChangeText={setSize} placeholder="20" keyboardType="numeric"
                   placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
-                  keyboardType="numeric"
-                  style={{
-                    paddingHorizontal: 16,
-                    paddingVertical: 12,
-                    borderRadius: 12,
-                    fontSize: 16,
-                    marginBottom: 16,
-                    backgroundColor: isDark ? '#334155' : '#F1F5F9',
-                    color: isDark ? '#FFFFFF' : '#0F172A',
-                  }}
+                  style={{ paddingHorizontal: 16, paddingVertical: 12, borderRadius: 12, fontSize: 16, marginBottom: 16, backgroundColor: isDark ? '#334155' : '#F1F5F9', color: isDark ? '#fff' : '#0F172A' }}
                 />
-
-                {/* Water Type */}
-                <Text
-                  className={cn(
-                    'text-sm font-semibold mb-2',
-                    isDark ? 'text-slate-300' : 'text-slate-600'
-                  )}
-                >
-                  Water Type
-                </Text>
+                <Text className={cn('text-sm font-semibold mb-2', isDark ? 'text-slate-300' : 'text-slate-600')}>Water Type</Text>
                 <View className="flex-row mb-6">
-                  <Pressable
-                    onPress={() => setWaterType('freshwater')}
-                    className={cn(
-                      'flex-1 py-3 rounded-xl mr-2 items-center',
-                      waterType === 'freshwater'
-                        ? 'bg-sky-500'
-                        : isDark
-                        ? 'bg-slate-700'
-                        : 'bg-slate-100'
-                    )}
-                  >
-                    <Text
-                      className={cn(
-                        'font-semibold',
-                        waterType === 'freshwater'
-                          ? 'text-white'
-                          : isDark
-                          ? 'text-slate-300'
-                          : 'text-slate-600'
+                  {(['freshwater', 'saltwater'] as WaterType[]).map(wt => (
+                    <Pressable key={wt} onPress={() => setWaterType(wt)}
+                      className={cn('flex-1 py-3 rounded-xl items-center', wt === 'freshwater' ? 'mr-2' : '',
+                        waterType === wt ? 'bg-sky-500' : isDark ? 'bg-slate-700' : 'bg-slate-100'
                       )}
                     >
-                      Freshwater
-                    </Text>
-                  </Pressable>
-                  <Pressable
-                    onPress={() => setWaterType('saltwater')}
-                    className={cn(
-                      'flex-1 py-3 rounded-xl items-center',
-                      waterType === 'saltwater'
-                        ? 'bg-sky-500'
-                        : isDark
-                        ? 'bg-slate-700'
-                        : 'bg-slate-100'
-                    )}
-                  >
-                    <Text
-                      className={cn(
-                        'font-semibold',
-                        waterType === 'saltwater'
-                          ? 'text-white'
-                          : isDark
-                          ? 'text-slate-300'
-                          : 'text-slate-600'
-                      )}
-                    >
-                      Saltwater
-                    </Text>
-                  </Pressable>
+                      <Text className={cn('font-semibold capitalize', waterType === wt ? 'text-white' : isDark ? 'text-slate-300' : 'text-slate-600')}>{wt}</Text>
+                    </Pressable>
+                  ))}
                 </View>
-
-                <Pressable
-                  onPress={handleSubmit}
-                  disabled={!name.trim() || !size}
-                  className={cn(
-                    'py-4 rounded-xl items-center',
-                    name.trim() && size ? 'bg-sky-500' : 'bg-slate-400'
-                  )}
+                <Pressable onPress={handleSubmit} disabled={!name.trim() || !size}
+                  className={cn('py-4 rounded-xl items-center', name.trim() && size ? 'bg-sky-500' : 'bg-slate-400')}
                 >
                   <Text className="text-white font-bold text-base">Create Tank</Text>
                 </Pressable>
@@ -253,800 +89,249 @@ const CreateTankModal = ({
   );
 };
 
-// Rename Tank Modal
-const RenameTankModal = ({
-  visible,
-  onClose,
-  onSubmit,
-  currentName,
-  isDark,
-}: {
-  visible: boolean;
-  onClose: () => void;
-  onSubmit: (newName: string) => void;
-  currentName: string;
-  isDark: boolean;
-}) => {
+// ─── Rename Modal ────────────────────────────────────────────────────────────
+
+const RenameModal = ({
+  visible, onClose, onSubmit, currentName, isDark,
+}: { visible: boolean; onClose: () => void; onSubmit: (n: string) => void; currentName: string; isDark: boolean }) => {
   const [name, setName] = useState(currentName);
-
-  // Reset name when currentName changes (modal opens with new tank)
-  React.useEffect(() => {
-    setName(currentName);
-  }, [currentName]);
-
-  const handleSubmit = () => {
-    if (name.trim()) {
-      onSubmit(name.trim());
-      onClose();
-    }
-  };
-
+  React.useEffect(() => { setName(currentName); }, [currentName]);
   return (
     <Modal visible={visible} transparent animationType="fade">
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View className="flex-1 bg-black/50">
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            className="flex-1 justify-center pb-32"
-          >
-            <TouchableWithoutFeedback>
-              <View
-                className={cn(
-                  'mx-4 rounded-3xl p-6',
-                  isDark ? 'bg-slate-800' : 'bg-white'
-                )}
-              >
-                <View className="flex-row justify-between items-center mb-6">
-                  <Text
-                    className={cn(
-                      'text-xl font-bold',
-                      isDark ? 'text-white' : 'text-slate-900'
-                    )}
-                  >
-                    Rename Tank
-                  </Text>
-                  <Pressable onPress={onClose}>
-                    <X size={24} color={isDark ? '#94A3B8' : '#64748B'} />
-                  </Pressable>
-                </View>
-
-                <Text
-                  className={cn(
-                    'text-sm font-semibold mb-2',
-                    isDark ? 'text-slate-300' : 'text-slate-600'
-                  )}
-                >
-                  Tank Name
-                </Text>
-                <TextInput
-                  value={name}
-                  onChangeText={setName}
-                  placeholder="My Aquarium"
-                  placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
-                  autoFocus
-                  style={{
-                    paddingHorizontal: 16,
-                    paddingVertical: 12,
-                    borderRadius: 12,
-                    fontSize: 16,
-                    marginBottom: 24,
-                    backgroundColor: isDark ? '#334155' : '#F1F5F9',
-                    color: isDark ? '#FFFFFF' : '#0F172A',
-                  }}
-                />
-
-                <Pressable
-                  onPress={handleSubmit}
-                  disabled={!name.trim()}
-                  className={cn(
-                    'py-4 rounded-xl items-center',
-                    name.trim() ? 'bg-sky-500' : 'bg-slate-400'
-                  )}
-                >
-                  <Text className="text-white font-bold text-base">Save</Text>
-                </Pressable>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 16 }}>
+          <TouchableWithoutFeedback>
+            <View className={cn('rounded-3xl p-6', isDark ? 'bg-slate-800' : 'bg-white')}>
+              <View className="flex-row justify-between items-center mb-5">
+                <Text className={cn('text-xl font-bold', isDark ? 'text-white' : 'text-slate-900')}>Rename Tank</Text>
+                <Pressable onPress={onClose}><X size={24} color={isDark ? '#94A3B8' : '#64748B'} /></Pressable>
               </View>
-            </TouchableWithoutFeedback>
-          </KeyboardAvoidingView>
+              <TextInput value={name} onChangeText={setName} autoFocus
+                placeholderTextColor={isDark ? '#94A3B8' : '#9CA3AF'}
+                style={{ paddingHorizontal: 16, paddingVertical: 12, borderRadius: 12, fontSize: 16, marginBottom: 20, backgroundColor: isDark ? '#334155' : '#F1F5F9', color: isDark ? '#fff' : '#0F172A' }}
+              />
+              <Pressable onPress={() => { if (name.trim()) { onSubmit(name.trim()); onClose(); } }}
+                disabled={!name.trim()} className={cn('py-4 rounded-xl items-center', name.trim() ? 'bg-sky-500' : 'bg-slate-400')}
+              >
+                <Text className="text-white font-bold">Save</Text>
+              </Pressable>
+            </View>
+          </TouchableWithoutFeedback>
         </View>
       </TouchableWithoutFeedback>
     </Modal>
   );
 };
 
+// ─── Cleanliness constants ────────────────────────────────────────────────────
+
+const CLEAN_COLORS = { clean: '#10B981', 'due-soon': '#F59E0B', overdue: '#EF4444' } as const;
+const CLEAN_LABELS = { clean: 'Clean', 'due-soon': 'Due soon', overdue: 'Needs cleaning!' } as const;
+
+// ─── Tank Card ───────────────────────────────────────────────────────────────
+
 const TankCard = ({
-  tank,
-  isActive,
-  isSelected,
-  isFavorite,
-  onSelect,
-  onDelete,
-  onViewDetails,
-  onToggleFavorite,
-  onRename,
-  isDark,
+  tank, isActive, isFavorite, onSetActive, onDelete, onAddFish, onAddPlants,
+  onRename, onToggleFavorite, onMarkCleaned, onRegenerateImage, isDark,
 }: {
-  tank: TankSetup;
+  tank: ExtendedTankSetup;
   isActive: boolean;
-  isSelected: boolean;
   isFavorite: boolean;
-  onSelect: () => void;
+  onSetActive: () => void;
   onDelete: () => void;
-  onViewDetails: () => void;
-  onToggleFavorite: () => void;
+  onAddFish: () => void;
+  onAddPlants: () => void;
   onRename: () => void;
+  onToggleFavorite: () => void;
+  onMarkCleaned: () => void;
+  onRegenerateImage: () => void;
   isDark: boolean;
 }) => {
-  const fish = tank.fishIds.map((id) => getFishById(id)).filter((f): f is Fish => f !== undefined);
-  const plants = (tank.plantIds || []).map((id) => getPlantById(id)).filter((p): p is Plant => p !== undefined);
-  const compatibility = fish.length >= 2
-    ? checkMultipleFishCompatibility(tank.fishIds, tank.size)
-    : null;
+  const cleanliness = getTankCleanliness(tank);
+  const cleanColor = CLEAN_COLORS[cleanliness];
+  const cleanLabel = CLEAN_LABELS[cleanliness];
 
-  const statusColor = compatibility?.overallStatus === 'compatible'
-    ? '#10B981'
-    : compatibility?.overallStatus === 'conditional'
-    ? '#F59E0B'
-    : compatibility?.overallStatus === 'incompatible'
-    ? '#EF4444'
-    : '#64748B';
+  const imageUri = cleanliness === 'overdue'
+    ? (tank.generatedImageDirtyUrl ?? tank.generatedImageUrl)
+    : tank.generatedImageUrl;
 
   return (
-    <Pressable
-      onPress={onSelect}
-      className={cn(
-        'rounded-2xl p-4 mb-3',
-        isSelected
-          ? 'border-2 border-sky-500'
-          : isActive
-          ? 'border-2 border-emerald-500/50'
-          : '',
-        isDark ? 'bg-slate-800' : 'bg-white'
+    <View
+      className={cn('mb-4 rounded-2xl overflow-hidden', isDark ? 'bg-slate-800' : 'bg-white',
+        isActive ? 'border-2 border-sky-500' : ''
       )}
+      style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: isDark ? 0.3 : 0.1, shadowRadius: 8, elevation: 4 }}
     >
-      <View className="flex-row justify-between items-start mb-3">
-        <View className="flex-1">
-          <View className="flex-row items-center">
-            {isFavorite && (
-              <Star size={14} color="#F59E0B" fill="#F59E0B" style={{ marginRight: 4 }} />
-            )}
-            <Text
-              className={cn(
-                'text-lg font-bold',
-                isDark ? 'text-white' : 'text-slate-900'
-              )}
-            >
+      {/* AI image or gradient placeholder */}
+      {imageUri ? (
+        <Image source={{ uri: imageUri }} style={{ width: '100%', height: 180 }} resizeMode="cover" />
+      ) : (
+        <LinearGradient
+          colors={tank.waterType === 'saltwater' ? ['#0A3D62', '#0C6E8A'] : ['#0A3D5C', '#0B5270']}
+          style={{ height: 180, alignItems: 'center', justifyContent: 'center' }}
+        >
+          <FishIcon size={48} color="rgba(255,255,255,0.3)" />
+          <Pressable onPress={onRegenerateImage} className="mt-3 bg-white/20 px-4 py-2 rounded-full flex-row items-center">
+            <Camera size={14} color="white" />
+            <Text className="text-white text-xs font-semibold ml-2">Generate Image</Text>
+          </Pressable>
+        </LinearGradient>
+      )}
+
+      {/* Overlay badges */}
+      <View style={{ position: 'absolute', top: 12, left: 12, flexDirection: 'row', gap: 6 }}>
+        {isActive && (
+          <View className="bg-sky-500 rounded-full px-3 py-1">
+            <Text className="text-white text-xs font-bold">Main Tank</Text>
+          </View>
+        )}
+        {isFavorite && (
+          <View className="bg-amber-500 rounded-full px-3 py-1">
+            <Text className="text-white text-xs font-bold">Favourite</Text>
+          </View>
+        )}
+      </View>
+
+      {/* Regenerate button overlay */}
+      {imageUri && (
+        <Pressable
+          onPress={onRegenerateImage}
+          style={{ position: 'absolute', top: 12, right: 12, backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: 20, padding: 8 }}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <RefreshCw size={16} color="white" />
+        </Pressable>
+      )}
+
+      {/* Card body */}
+      <View className="p-4">
+        {/* Title row */}
+        <View className="flex-row items-center justify-between mb-2">
+          <View className="flex-row items-center flex-1">
+            <Text className={cn('text-lg font-bold mr-2', isDark ? 'text-white' : 'text-slate-900')} numberOfLines={1}>
               {tank.name}
             </Text>
-            {isActive && (
-              <View className="ml-2 px-2 py-0.5 rounded bg-emerald-500">
-                <Text className="text-white text-xs font-medium">Active</Text>
-              </View>
-            )}
+            <View style={{ backgroundColor: `${cleanColor}20`, borderRadius: 8, paddingHorizontal: 6, paddingVertical: 2 }}>
+              <Text style={{ color: cleanColor, fontSize: 10, fontWeight: '700' }}>{cleanLabel}</Text>
+            </View>
           </View>
-          <View className="flex-row items-center mt-1">
-            <Droplets
-              size={14}
-              color={tank.waterType === 'freshwater' ? '#3B82F6' : '#0EA5E9'}
-            />
-            <Text
-              className={cn(
-                'text-sm ml-1 capitalize',
-                isDark ? 'text-slate-400' : 'text-slate-500'
-              )}
-            >
-              {tank.waterType} • {tank.size} gal
-            </Text>
+          <View className="flex-row">
+            <Pressable onPress={onRename} className="p-2" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Pencil size={16} color={isDark ? '#64748B' : '#94A3B8'} />
+            </Pressable>
+            <Pressable onPress={onToggleFavorite} className="p-2" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Star size={16} color={isFavorite ? '#F59E0B' : isDark ? '#64748B' : '#94A3B8'} fill={isFavorite ? '#F59E0B' : 'transparent'} />
+            </Pressable>
+            <Pressable onPress={onDelete} className="p-2" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Trash2 size={16} color="#EF4444" />
+            </Pressable>
           </View>
         </View>
+
+        {/* Stats row */}
+        <View className="flex-row items-center mb-3">
+          <Droplets size={14} color={tank.waterType === 'saltwater' ? '#06B6D4' : '#3B82F6'} />
+          <Text className={cn('text-sm ml-1 capitalize', isDark ? 'text-slate-400' : 'text-slate-500')}>
+            {tank.waterType} · {tank.size}gal · {tank.fishIds.length} fish · {(tank.plantIds ?? []).length} plants
+          </Text>
+        </View>
+
+        {/* Cleanliness banners */}
+        {cleanliness === 'overdue' && (
+          <View className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 mb-3 flex-row items-center">
+            <AlertTriangle size={16} color="#EF4444" />
+            <Text className="text-red-500 text-sm font-semibold ml-2 flex-1">Tank needs cleaning!</Text>
+            <Pressable onPress={onMarkCleaned} className="bg-red-500 px-3 py-1.5 rounded-lg">
+              <Text className="text-white text-xs font-bold">Mark Cleaned</Text>
+            </Pressable>
+          </View>
+        )}
+        {cleanliness === 'due-soon' && (
+          <View className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 mb-3 flex-row items-center">
+            <AlertTriangle size={16} color="#F59E0B" />
+            <Text className="text-amber-500 text-sm font-semibold ml-2 flex-1">Cleaning due soon</Text>
+            <Pressable onPress={onMarkCleaned} className="bg-amber-500 px-3 py-1.5 rounded-lg">
+              <Text className="text-white text-xs font-bold">Mark Cleaned</Text>
+            </Pressable>
+          </View>
+        )}
+        {cleanliness === 'clean' && tank.lastCleanedAt && (
+          <View className="bg-emerald-500/10 rounded-xl p-3 mb-3 flex-row items-center">
+            <CheckCircle size={16} color="#10B981" />
+            <Text className="text-emerald-500 text-sm ml-2">Tank is clean</Text>
+          </View>
+        )}
 
         {/* Action buttons */}
-        <View className="flex-row items-center">
+        <View className="flex-row gap-2">
           <Pressable
-            onPress={onRename}
-            className="p-2"
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            onPress={onSetActive}
+            className={cn('flex-1 py-2.5 rounded-xl items-center', isActive ? 'bg-sky-500/20' : isDark ? 'bg-slate-700' : 'bg-slate-100')}
           >
-            <Pencil size={16} color={isDark ? '#64748B' : '#94A3B8'} />
-          </Pressable>
-          <Pressable
-            onPress={onToggleFavorite}
-            className="p-2"
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Star
-              size={18}
-              color={isFavorite ? '#F59E0B' : isDark ? '#64748B' : '#94A3B8'}
-              fill={isFavorite ? '#F59E0B' : 'transparent'}
-            />
-          </Pressable>
-          <Pressable
-            onPress={onViewDetails}
-            className="p-2"
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Info size={18} color="#0EA5E9" />
-          </Pressable>
-          <Pressable
-            onPress={onDelete}
-            className="p-2"
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Trash2 size={18} color="#EF4444" />
-          </Pressable>
-        </View>
-      </View>
-
-      {/* Selected Tank Preview - Shows fish/plant snapshot when selected */}
-      {isSelected && (fish.length > 0 || plants.length > 0) && (
-        <Animated.View
-          entering={FadeIn.duration(200)}
-          exiting={FadeOut.duration(150)}
-          className={cn(
-            'rounded-xl p-3 mb-3',
-            isDark ? 'bg-slate-700/50' : 'bg-slate-50'
-          )}
-        >
-          {fish.length > 0 && (
-            <View className="mb-2">
-              <Text className={cn('text-xs font-medium mb-2', isDark ? 'text-slate-400' : 'text-slate-500')}>
-                Fish ({fish.length})
-              </Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <View className="flex-row">
-                  {fish.slice(0, 6).map((f) => (
-                    <View key={f.id} className="mr-2 items-center">
-                      <Image
-                        source={getImageSource(f.imageUrl)}
-                        className="w-12 h-12 rounded-lg"
-                        resizeMode="cover"
-                      />
-                      <Text
-                        className={cn('text-xs mt-1 w-14 text-center', isDark ? 'text-slate-300' : 'text-slate-600')}
-                        numberOfLines={1}
-                      >
-                        {f.commonName.split(' ')[0]}
-                      </Text>
-                    </View>
-                  ))}
-                  {fish.length > 6 && (
-                    <View className="w-12 h-12 rounded-lg items-center justify-center bg-slate-200 dark:bg-slate-600">
-                      <Text className={cn('text-xs font-medium', isDark ? 'text-slate-300' : 'text-slate-600')}>
-                        +{fish.length - 6}
-                      </Text>
-                    </View>
-                  )}
-                </View>
-              </ScrollView>
-            </View>
-          )}
-          {plants.length > 0 && (
-            <View>
-              <Text className={cn('text-xs font-medium mb-2', isDark ? 'text-slate-400' : 'text-slate-500')}>
-                Plants ({plants.length})
-              </Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <View className="flex-row">
-                  {plants.slice(0, 6).map((p) => (
-                    <View key={p.id} className="mr-2 items-center">
-                      <Image
-                        source={getImageSource(p.imageUrl)}
-                        className="w-12 h-12 rounded-lg"
-                        resizeMode="cover"
-                      />
-                      <Text
-                        className={cn('text-xs mt-1 w-14 text-center', isDark ? 'text-slate-300' : 'text-slate-600')}
-                        numberOfLines={1}
-                      >
-                        {p.commonName.split(' ')[0]}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-              </ScrollView>
-            </View>
-          )}
-        </Animated.View>
-      )}
-
-      {/* Fish Preview (when not selected) */}
-      {!isSelected && (
-        <View className="flex-row items-center">
-          {fish.slice(0, 4).map((f, i) => (
-            <Image
-              key={f.id}
-              source={getImageSource(f.imageUrl)}
-              className="w-10 h-10 rounded-full border-2"
-              style={{
-                marginLeft: i > 0 ? -8 : 0,
-                borderColor: isDark ? '#1E293B' : '#FFFFFF',
-              }}
-              resizeMode="cover"
-            />
-          ))}
-          {fish.length > 4 && (
-            <View
-              className={cn(
-                'w-10 h-10 rounded-full items-center justify-center -ml-2 border-2',
-                isDark ? 'bg-slate-700 border-slate-900' : 'bg-slate-100 border-white'
-              )}
-            >
-              <Text
-                className={cn(
-                  'text-xs font-semibold',
-                  isDark ? 'text-slate-300' : 'text-slate-600'
-                )}
-              >
-                +{fish.length - 4}
-              </Text>
-            </View>
-          )}
-          {fish.length === 0 && (
-            <Text
-              className={cn(
-                'text-sm',
-                isDark ? 'text-slate-400' : 'text-slate-500'
-              )}
-            >
-              No fish added yet
+            <Text className={cn('text-sm font-semibold', isActive ? 'text-sky-500' : isDark ? 'text-slate-300' : 'text-slate-600')}>
+              {isActive ? 'Main Tank' : 'Set as Main'}
             </Text>
-          )}
-
-          <View className="flex-1" />
-
-          {/* Status indicator */}
-          {compatibility && (
-            <View
-              className="flex-row items-center px-2 py-1 rounded-full"
-              style={{ backgroundColor: `${statusColor}20` }}
-            >
-              {compatibility.overallStatus === 'compatible' ? (
-                <CheckCircle size={14} color={statusColor} />
-              ) : (
-                <AlertTriangle size={14} color={statusColor} />
-              )}
-              <Text
-                className="text-xs font-medium ml-1 capitalize"
-                style={{ color: statusColor }}
-              >
-                {compatibility.overallStatus}
-              </Text>
-            </View>
-          )}
+          </Pressable>
+          <Pressable onPress={onAddFish} className={cn('flex-1 py-2.5 rounded-xl items-center flex-row justify-center gap-1', isDark ? 'bg-slate-700' : 'bg-slate-100')}>
+            <FishIcon size={14} color="#0EA5E9" />
+            <Text className={cn('text-sm font-semibold', isDark ? 'text-slate-300' : 'text-slate-600')}>Fish</Text>
+          </Pressable>
+          <Pressable onPress={onAddPlants} className={cn('flex-1 py-2.5 rounded-xl items-center flex-row justify-center gap-1', isDark ? 'bg-slate-700' : 'bg-slate-100')}>
+            <Leaf size={14} color="#10B981" />
+            <Text className={cn('text-sm font-semibold', isDark ? 'text-slate-300' : 'text-slate-600')}>Plants</Text>
+          </Pressable>
         </View>
-      )}
-    </Pressable>
-  );
-};
-
-const FishInTank = ({
-  fish,
-  onRemove,
-  onPress,
-  isDark,
-}: {
-  fish: Fish;
-  onRemove: () => void;
-  onPress: () => void;
-  isDark: boolean;
-}) => {
-  const temperamentColor = {
-    peaceful: '#10B981',
-    'semi-aggressive': '#F59E0B',
-    aggressive: '#EF4444',
-  }[fish.temperament];
-
-  const avgPrice = (fish.price.min + fish.price.max) / 2;
-
-  return (
-    <Pressable
-      onPress={onPress}
-      className={cn(
-        'flex-row items-center p-3 rounded-xl mb-2',
-        isDark ? 'bg-slate-800' : 'bg-white'
-      )}
-    >
-      <FishImageDisplay fish={fish} />
-      <View className="flex-1 ml-3">
-        <Text
-          className={cn(
-            'text-base font-semibold',
-            isDark ? 'text-white' : 'text-slate-900'
-          )}
-        >
-          {fish.commonName}
-        </Text>
-        <View className="flex-row items-center mt-1">
-          <View
-            className="w-2 h-2 rounded-full mr-1"
-            style={{ backgroundColor: temperamentColor }}
-          />
-          <Text
-            className={cn(
-              'text-xs capitalize',
-              isDark ? 'text-slate-400' : 'text-slate-500'
-            )}
-          >
-            {fish.temperament}
-          </Text>
-          <Text
-            className={cn(
-              'text-xs ml-2',
-              isDark ? 'text-slate-400' : 'text-slate-500'
-            )}
-          >
-            ~£{avgPrice.toFixed(0)}
-          </Text>
-        </View>
-      </View>
-      <Pressable
-        onPress={onRemove}
-        className="p-2"
-        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-      >
-        <Trash2 size={18} color="#EF4444" />
-      </Pressable>
-    </Pressable>
-  );
-};
-
-const PlantInTank = ({
-  plant,
-  onRemove,
-  onPress,
-  isDark,
-}: {
-  plant: Plant;
-  onRemove: () => void;
-  onPress: () => void;
-  isDark: boolean;
-}) => {
-  const difficultyColor = {
-    easy: '#10B981',
-    moderate: '#F59E0B',
-    difficult: '#EF4444',
-  }[plant.difficulty];
-
-  const avgPrice = (plant.price.min + plant.price.max) / 2;
-
-  return (
-    <Pressable
-      onPress={onPress}
-      className={cn(
-        'flex-row items-center p-3 rounded-xl mb-2',
-        isDark ? 'bg-slate-800' : 'bg-white'
-      )}
-    >
-      <PlantImageDisplay plant={plant} />
-      <View className="flex-1 ml-3">
-        <Text
-          className={cn(
-            'text-base font-semibold',
-            isDark ? 'text-white' : 'text-slate-900'
-          )}
-        >
-          {plant.commonName}
-        </Text>
-        <View className="flex-row items-center mt-1">
-          <View
-            className="w-2 h-2 rounded-full mr-1"
-            style={{ backgroundColor: difficultyColor }}
-          />
-          <Text
-            className={cn(
-              'text-xs capitalize',
-              isDark ? 'text-slate-400' : 'text-slate-500'
-            )}
-          >
-            {plant.difficulty}
-          </Text>
-          <Text
-            className={cn(
-              'text-xs ml-2',
-              isDark ? 'text-slate-400' : 'text-slate-500'
-            )}
-          >
-            ~£{avgPrice.toFixed(0)}
-          </Text>
-        </View>
-      </View>
-      <Pressable
-        onPress={onRemove}
-        className="p-2"
-        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-      >
-        <Trash2 size={18} color="#EF4444" />
-      </Pressable>
-    </Pressable>
-  );
-};
-
-const CompatibilityFixSuggestion = ({
-  result,
-  onRemoveFish,
-  isDark,
-}: {
-  result: CompatibilityResult;
-  onRemoveFish: (fishId: string) => void;
-  isDark: boolean;
-}) => {
-  const statusColor = result.status === 'conditional' ? '#F59E0B' : '#EF4444';
-
-  return (
-    <View
-      className={cn(
-        'rounded-xl p-4 mb-3',
-        isDark ? 'bg-slate-800' : 'bg-white'
-      )}
-    >
-      <View className="flex-row items-center mb-2">
-        <Image
-          source={getImageSource(result.fish1.imageUrl)}
-          className="w-8 h-8 rounded-full"
-          resizeMode="cover"
-        />
-        <AlertTriangle size={16} color={statusColor} className="mx-2" />
-        <Image
-          source={getImageSource(result.fish2.imageUrl)}
-          className="w-8 h-8 rounded-full"
-          resizeMode="cover"
-        />
-        <Text
-          className={cn(
-            'text-sm font-semibold ml-2 flex-1',
-            isDark ? 'text-white' : 'text-slate-900'
-          )}
-          numberOfLines={1}
-        >
-          {result.fish1.commonName} + {result.fish2.commonName}
-        </Text>
-      </View>
-
-      {result.reasons.slice(0, 1).map((reason, i) => (
-        <Text
-          key={i}
-          className={cn(
-            'text-xs mb-2',
-            isDark ? 'text-slate-400' : 'text-slate-500'
-          )}
-        >
-          {reason}
-        </Text>
-      ))}
-
-      <View className="flex-row items-center mt-2">
-        <Lightbulb size={14} color="#10B981" />
-        <Text
-          className={cn(
-            'text-xs font-medium ml-1',
-            isDark ? 'text-slate-300' : 'text-slate-600'
-          )}
-        >
-          Fix suggestion:
-        </Text>
-      </View>
-
-      <View className="flex-row mt-2 gap-2">
-        <Pressable
-          onPress={() => onRemoveFish(result.fish1.id)}
-          className="flex-1 flex-row items-center justify-center py-2 px-3 rounded-lg bg-red-500/10"
-        >
-          <Trash2 size={14} color="#EF4444" />
-          <Text className="text-red-500 text-xs font-medium ml-1" numberOfLines={1}>
-            Remove {result.fish1.commonName}
-          </Text>
-        </Pressable>
-        <Pressable
-          onPress={() => onRemoveFish(result.fish2.id)}
-          className="flex-1 flex-row items-center justify-center py-2 px-3 rounded-lg bg-red-500/10"
-        >
-          <Trash2 size={14} color="#EF4444" />
-          <Text className="text-red-500 text-xs font-medium ml-1" numberOfLines={1}>
-            Remove {result.fish2.commonName}
-          </Text>
-        </Pressable>
       </View>
     </View>
   );
 };
 
-const TankBreakdown = ({
-  fish,
-  isDark,
-}: {
-  fish: Fish[];
-  isDark: boolean;
-}) => {
-  const totalMinCost = fish.reduce((sum, f) => sum + f.price.min, 0);
-  const totalMaxCost = fish.reduce((sum, f) => sum + f.price.max, 0);
-  const avgCost = (totalMinCost + totalMaxCost) / 2;
-
-  return (
-    <View
-      className={cn(
-        'rounded-xl p-4 mb-4',
-        isDark ? 'bg-slate-800' : 'bg-white'
-      )}
-    >
-      <View className="flex-row items-center mb-3">
-        <PoundSterling size={18} color="#10B981" />
-        <Text
-          className={cn(
-            'text-base font-bold ml-2',
-            isDark ? 'text-white' : 'text-slate-900'
-          )}
-        >
-          Tank Breakdown
-        </Text>
-      </View>
-
-      <View className="flex-row justify-between items-center mb-2">
-        <Text
-          className={cn(
-            'text-sm',
-            isDark ? 'text-slate-400' : 'text-slate-500'
-          )}
-        >
-          Total Fish
-        </Text>
-        <Text
-          className={cn(
-            'text-sm font-semibold',
-            isDark ? 'text-white' : 'text-slate-900'
-          )}
-        >
-          {fish.length}
-        </Text>
-      </View>
-
-      <View className="flex-row justify-between items-center mb-2">
-        <Text
-          className={cn(
-            'text-sm',
-            isDark ? 'text-slate-400' : 'text-slate-500'
-          )}
-        >
-          Est. Cost Range
-        </Text>
-        <Text
-          className={cn(
-            'text-sm font-semibold',
-            isDark ? 'text-white' : 'text-slate-900'
-          )}
-        >
-          £{totalMinCost} - £{totalMaxCost}
-        </Text>
-      </View>
-
-      <View
-        className={cn(
-          'mt-2 pt-2 border-t flex-row justify-between items-center',
-          isDark ? 'border-slate-700' : 'border-slate-200'
-        )}
-      >
-        <Text
-          className={cn(
-            'text-sm font-semibold',
-            isDark ? 'text-slate-300' : 'text-slate-600'
-          )}
-        >
-          Est. Total
-        </Text>
-        <Text className="text-lg font-bold text-emerald-500">
-          ~£{avgCost.toFixed(0)}
-        </Text>
-      </View>
-    </View>
-  );
-};
+// ─── Main screen ─────────────────────────────────────────────────────────────
 
 export default function MyTankScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showRenameModal, setShowRenameModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showDeleteFishModal, setShowDeleteFishModal] = useState(false);
-  const [showDeletePlantModal, setShowDeletePlantModal] = useState(false);
-  const [deletingTankId, setDeletingTankId] = useState<string | null>(null);
-  const [deletingFish, setDeletingFish] = useState<Fish | null>(null);
-  const [deletingPlant, setDeletingPlant] = useState<Plant | null>(null);
-  const [selectedTankId, setSelectedTankId] = useState<string | null>(null);
+  const tanks = useTankStore(s => s.tanks);
+  const activeTankId = useTankStore(s => s.activeTankId);
+  const favoriteTankId = useTankStore(s => s.favoriteTankId);
+  const addTank = useTankStore(s => s.addTank);
+  const removeTank = useTankStore(s => s.removeTank);
+  const renameTank = useTankStore(s => s.renameTank);
+  const setActiveTank = useTankStore(s => s.setActiveTank);
+  const setFavoriteTank = useTankStore(s => s.setFavoriteTank);
+  const getSortedTanks = useTankStore(s => s.getSortedTanks);
+  const confirmCleaned = useTankStore(s => s.confirmCleaned);
+  const updateTankImage = useTankStore(s => s.updateTankImage);
+
+  const [showCreate, setShowCreate] = useState(false);
   const [renamingTankId, setRenamingTankId] = useState<string | null>(null);
+  const [deletingTankId, setDeletingTankId] = useState<string | null>(null);
+  const deletingTank = tanks.find(t => t.id === deletingTankId);
+  const [generatingImageFor, setGeneratingImageFor] = useState<string | null>(null);
 
-  const tanks = useTankStore((s) => s.tanks);
-  const activeTankId = useTankStore((s) => s.activeTankId);
-  const favoriteTankId = useTankStore((s) => s.favoriteTankId);
-  const addTank = useTankStore((s) => s.addTank);
-  const removeTank = useTankStore((s) => s.removeTank);
-  const renameTank = useTankStore((s) => s.renameTank);
-  const setActiveTank = useTankStore((s) => s.setActiveTank);
-  const setFavoriteTank = useTankStore((s) => s.setFavoriteTank);
-  const getSortedTanks = useTankStore((s) => s.getSortedTanks);
-  const removeFishFromTank = useTankStore((s) => s.removeFishFromTank);
-  const removePlantFromTank = useTankStore((s) => s.removePlantFromTank);
-
-  // Get sorted tanks (favorite first)
   const sortedTanks = getSortedTanks();
+  const renamingTank = tanks.find(t => t.id === renamingTankId);
 
-  const activeTank = tanks.find((t) => t.id === activeTankId);
-  const selectedTank = tanks.find((t) => t.id === selectedTankId);
-  const renamingTank = tanks.find((t) => t.id === renamingTankId);
-  const deletingTank = tanks.find((t) => t.id === deletingTankId);
+  const handleRegenerateImage = useCallback(async (tank: ExtendedTankSetup) => {
+    if (generatingImageFor === tank.id) return;
+    setGeneratingImageFor(tank.id);
+    const fishObjs = tank.fishIds.map(id => getFishById(id)).filter(Boolean);
+    const plantObjs = (tank.plantIds ?? []).map(id => getPlantById(id)).filter(Boolean);
+    const fishNames = fishObjs.map(f => f!.commonName);
+    const plantNames = plantObjs.map(p => p!.commonName);
+    const cleanliness = getTankCleanliness(tank);
+    const isDirty = cleanliness === 'overdue';
+    const url = await generateTankImage(fishNames, plantNames, tank.waterType, isDirty);
+    if (url) updateTankImage(tank.id, url, isDirty);
+    setGeneratingImageFor(null);
+  }, [generatingImageFor, updateTankImage]);
 
-  const handleDeleteTank = (tankId: string) => {
-    setDeletingTankId(tankId);
-    setShowDeleteModal(true);
-  };
-
-  const confirmDeleteTank = () => {
-    if (deletingTankId) {
-      removeTank(deletingTankId);
-      setShowDeleteModal(false);
-      setDeletingTankId(null);
-    }
-  };
-
-  const handleDeleteFish = (fish: Fish) => {
-    setDeletingFish(fish);
-    setShowDeleteFishModal(true);
-  };
-
-  const confirmDeleteFish = () => {
-    if (deletingFish && activeTank) {
-      removeFishFromTank(activeTank.id, deletingFish.id);
-      setShowDeleteFishModal(false);
-      setDeletingFish(null);
-    }
-  };
-
-  const handleDeletePlant = (plant: Plant) => {
-    setDeletingPlant(plant);
-    setShowDeletePlantModal(true);
-  };
-
-  const confirmDeletePlant = () => {
-    if (deletingPlant && activeTank) {
-      removePlantFromTank(activeTank.id, deletingPlant.id);
-      setShowDeletePlantModal(false);
-      setDeletingPlant(null);
-    }
-  };
-
-  const activeTankFish = useMemo(() => {
-    return activeTank?.fishIds
-      .map((id) => getFishById(id))
-      .filter((f): f is Fish => f !== undefined) || [];
-  }, [activeTank?.fishIds]);
-
-  const activeTankPlants = useMemo(() => {
-    return (activeTank?.plantIds || [])
-      .map((id) => getPlantById(id))
-      .filter((p): p is Plant => p !== undefined);
-  }, [activeTank?.plantIds]);
-
-  const compatibility = useMemo(() => {
-    return activeTankFish.length >= 2
-      ? checkMultipleFishCompatibility(activeTank?.fishIds || [], activeTank?.size)
-      : null;
-  }, [activeTankFish, activeTank?.fishIds, activeTank?.size]);
-
-  const incompatibleResults = useMemo(() => {
-    if (!compatibility) return [];
-    return compatibility.results.filter(r => r.status !== 'compatible');
-  }, [compatibility]);
-
-  const handleCreateTank = (name: string, size: number, waterType: WaterType) => {
-    addTank(name, size, waterType);
-  };
-
-  const handleRemoveFishForFix = (fishId: string) => {
-    if (activeTank) {
-      removeFishFromTank(activeTank.id, fishId);
-    }
-  };
+  const handleMarkCleaned = useCallback((tank: ExtendedTankSetup) => {
+    confirmCleaned(tank.id);
+    handleRegenerateImage({ ...tank, lastCleanedAt: new Date().toISOString() });
+  }, [confirmCleaned, handleRegenerateImage]);
 
   return (
     <View className={cn('flex-1', isDark ? 'bg-slate-900' : 'bg-slate-50')}>
@@ -1054,494 +339,132 @@ export default function MyTankScreen() {
         {/* Header */}
         <LinearGradient
           colors={isDark ? ['#1E293B', '#0F172A'] : ['#10B981', '#059669']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={{
-            paddingHorizontal: 20,
-            paddingTop: 16,
-            paddingBottom: 20,
-          }}
+          start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+          style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 20 }}
         >
           <View className="flex-row items-center justify-between">
             <View className="flex-row items-center">
               <Container size={24} color="white" />
               <Text className="text-white text-2xl font-bold ml-2">My Tank</Text>
             </View>
-            <Pressable
-              onPress={() => setShowCreateModal(true)}
-              className="bg-white/20 rounded-full p-2"
-            >
+            <Pressable onPress={() => setShowCreate(true)} className="bg-white/20 rounded-full p-2">
               <Plus size={24} color="white" />
             </Pressable>
           </View>
-          {activeTank && (
-            <Text className="text-white/80 text-sm mt-2">
-              {activeTank.name} • {activeTankFish.length} fish, {activeTankPlants.length} plants
-            </Text>
-          )}
+          <Text className="text-white/70 text-sm mt-1">{tanks.length} tank{tanks.length !== 1 ? 's' : ''}</Text>
         </LinearGradient>
 
-        <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+        <ScrollView className="flex-1" showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 20 }}>
           {tanks.length === 0 ? (
-            /* Empty State */
-            <View className="flex-1 items-center justify-center px-8 pt-20">
-              <View
-                className={cn(
-                  'w-24 h-24 rounded-full items-center justify-center mb-6',
-                  isDark ? 'bg-slate-800' : 'bg-slate-100'
-                )}
-              >
+            <View className="items-center justify-center pt-20">
+              <View className={cn('w-24 h-24 rounded-full items-center justify-center mb-6', isDark ? 'bg-slate-800' : 'bg-slate-100')}>
                 <FishIcon size={40} color={isDark ? '#64748B' : '#94A3B8'} />
               </View>
-              <Text
-                className={cn(
-                  'text-xl font-bold text-center mb-2',
-                  isDark ? 'text-white' : 'text-slate-900'
-                )}
-              >
-                No Tanks Yet
+              <Text className={cn('text-xl font-bold text-center mb-2', isDark ? 'text-white' : 'text-slate-900')}>No Tanks Yet</Text>
+              <Text className={cn('text-center text-sm mb-6', isDark ? 'text-slate-400' : 'text-slate-500')}>
+                Create your first tank to track your fish and check compatibility.
               </Text>
-              <Text
-                className={cn(
-                  'text-center text-sm mb-6',
-                  isDark ? 'text-slate-400' : 'text-slate-500'
-                )}
-              >
-                Create your first tank to start tracking your fish and checking
-                compatibility.
-              </Text>
-              <Pressable
-                onPress={() => setShowCreateModal(true)}
-                className="bg-sky-500 px-6 py-3 rounded-xl"
-              >
+              <Pressable onPress={() => setShowCreate(true)} className="bg-sky-500 px-6 py-3 rounded-xl">
                 <Text className="text-white font-bold">Create Tank</Text>
               </Pressable>
             </View>
           ) : (
-            <View className="px-5 pt-4">
-              {/* Tank List */}
-              <Text
-                className={cn(
-                  'text-sm font-semibold mb-3',
-                  isDark ? 'text-slate-300' : 'text-slate-600'
-                )}
-              >
-                Your Tanks ({tanks.length})
-              </Text>
-
-              {sortedTanks.map((tank) => (
-                <TankCard
-                  key={tank.id}
-                  tank={tank}
-                  isActive={tank.id === activeTankId}
-                  isSelected={tank.id === selectedTankId}
-                  isFavorite={tank.id === favoriteTankId}
-                  onSelect={() => {
-                    if (selectedTankId === tank.id) {
-                      // Deselect if already selected
-                      setSelectedTankId(null);
-                    } else {
-                      // Select this tank and make it active
-                      setSelectedTankId(tank.id);
-                      setActiveTank(tank.id);
-                    }
-                  }}
-                  onDelete={() => handleDeleteTank(tank.id)}
-                  onViewDetails={() => router.push(`/tank/${tank.id}`)}
-                  onToggleFavorite={() => {
-                    if (favoriteTankId === tank.id) {
-                      setFavoriteTank(null);
-                    } else {
-                      setFavoriteTank(tank.id);
-                    }
-                  }}
-                  onRename={() => {
-                    setRenamingTankId(tank.id);
-                    setShowRenameModal(true);
-                  }}
-                  isDark={isDark}
-                />
-              ))}
-
-              {/* Active Tank Details */}
-              {activeTank && (
-                <View className="mt-6">
-                  {/* Tank Breakdown */}
-                  {activeTankFish.length > 0 && (
-                    <TankBreakdown fish={activeTankFish} isDark={isDark} />
-                  )}
-
-                  {/* Compatibility Issues with Fix Suggestions */}
-                  {incompatibleResults.length > 0 && (
-                    <View className="mb-4">
-                      <Text
-                        className={cn(
-                          'text-sm font-semibold mb-3',
-                          isDark ? 'text-slate-300' : 'text-slate-600'
-                        )}
-                      >
-                        Compatibility Issues ({incompatibleResults.length})
-                      </Text>
-                      {incompatibleResults.map((result, i) => (
-                        <CompatibilityFixSuggestion
-                          key={`${result.fish1.id}-${result.fish2.id}`}
-                          result={result}
-                          onRemoveFish={handleRemoveFishForFix}
-                          isDark={isDark}
-                        />
-                      ))}
+            <>
+              {sortedTanks.map(tank => (
+                <View key={tank.id}>
+                  <TankCard
+                    tank={tank}
+                    isActive={tank.id === activeTankId}
+                    isFavorite={tank.id === favoriteTankId}
+                    isDark={isDark}
+                    onSetActive={() => setActiveTank(tank.id === activeTankId ? null : tank.id)}
+                    onDelete={() => setDeletingTankId(tank.id)}
+                    onAddFish={() => router.push(`/add-to-tank?tankId=${tank.id}&mode=fish`)}
+                    onAddPlants={() => router.push(`/add-to-tank?tankId=${tank.id}&mode=plants`)}
+                    onRename={() => setRenamingTankId(tank.id)}
+                    onToggleFavorite={() => setFavoriteTank(tank.id === favoriteTankId ? null : tank.id)}
+                    onMarkCleaned={() => handleMarkCleaned(tank)}
+                    onRegenerateImage={() => handleRegenerateImage(tank)}
+                  />
+                  {generatingImageFor === tank.id && (
+                    <View className="items-center -mt-2 mb-4">
+                      <ActivityIndicator size="small" color="#0EA5E9" />
+                      <Text className={cn('text-xs mt-1', isDark ? 'text-slate-400' : 'text-slate-500')}>Generating tank image…</Text>
                     </View>
-                  )}
-
-                  <View className="flex-row justify-between items-center mb-3">
-                    <View className="flex-row items-center">
-                      <FishIcon size={18} color={isDark ? '#94A3B8' : '#64748B'} />
-                      <Text
-                        className={cn(
-                          'text-lg font-bold ml-2',
-                          isDark ? 'text-white' : 'text-slate-900'
-                        )}
-                      >
-                        Fish
-                      </Text>
-                    </View>
-                    <Pressable
-                      onPress={() => activeTank && router.push(`/add-to-tank?tankId=${activeTank.id}&mode=fish`)}
-                      className="flex-row items-center"
-                    >
-                      <Text className="text-sky-500 text-sm font-medium mr-1">
-                        Add
-                      </Text>
-                      <ChevronRight size={16} color="#0EA5E9" />
-                    </Pressable>
-                  </View>
-
-                  {activeTankFish.length === 0 ? (
-                    <View
-                      className={cn(
-                        'p-6 rounded-xl items-center mb-6',
-                        isDark ? 'bg-slate-800' : 'bg-white'
-                      )}
-                    >
-                      <FishIcon
-                        size={32}
-                        color={isDark ? '#64748B' : '#94A3B8'}
-                      />
-                      <Text
-                        className={cn(
-                          'text-sm mt-3 text-center',
-                          isDark ? 'text-slate-400' : 'text-slate-500'
-                        )}
-                      >
-                        No fish yet. Search and add fish to get started!
-                      </Text>
-                    </View>
-                  ) : (
-                    <View className="mb-6">
-                      {activeTankFish.map((fish) => (
-                        <FishInTank
-                          key={fish.id}
-                          fish={fish}
-                          onRemove={() => handleDeleteFish(fish)}
-                          onPress={() => router.push(`/fish/${fish.id}`)}
-                          isDark={isDark}
-                        />
-                      ))}
-                    </View>
-                  )}
-
-                  {/* Plants Section */}
-                  <View className="flex-row justify-between items-center mb-3">
-                    <View className="flex-row items-center">
-                      <Leaf size={18} color="#10B981" />
-                      <Text
-                        className={cn(
-                          'text-lg font-bold ml-2',
-                          isDark ? 'text-white' : 'text-slate-900'
-                        )}
-                      >
-                        Plants
-                      </Text>
-                    </View>
-                    <Pressable
-                      onPress={() => activeTank && router.push(`/add-to-tank?tankId=${activeTank.id}&mode=plants`)}
-                      className="flex-row items-center"
-                    >
-                      <Text className="text-emerald-500 text-sm font-medium mr-1">
-                        Add
-                      </Text>
-                      <ChevronRight size={16} color="#10B981" />
-                    </Pressable>
-                  </View>
-
-                  {activeTankPlants.length === 0 ? (
-                    <View
-                      className={cn(
-                        'p-6 rounded-xl items-center',
-                        isDark ? 'bg-slate-800' : 'bg-white'
-                      )}
-                    >
-                      <Leaf
-                        size={32}
-                        color={isDark ? '#64748B' : '#94A3B8'}
-                      />
-                      <Text
-                        className={cn(
-                          'text-sm mt-3 text-center',
-                          isDark ? 'text-slate-400' : 'text-slate-500'
-                        )}
-                      >
-                        No plants yet. Add plants for a healthy ecosystem!
-                      </Text>
-                    </View>
-                  ) : (
-                    activeTankPlants.map((plant) => (
-                      <PlantInTank
-                        key={plant.id}
-                        plant={plant}
-                        onRemove={() => handleDeletePlant(plant)}
-                        onPress={() => router.push(`/plant/${plant.id}`)}
-                        isDark={isDark}
-                      />
-                    ))
                   )}
                 </View>
-              )}
-            </View>
+              ))}
+            </>
           )}
-
-          <View className="h-8" />
+          <View className="h-20" />
         </ScrollView>
 
+        {/* FAB — only shown when tanks exist */}
+        {tanks.length > 0 && (
+          <Pressable
+            onPress={() => setShowCreate(true)}
+            style={{
+              position: 'absolute', bottom: 24, right: 24,
+              width: 56, height: 56, borderRadius: 28,
+              backgroundColor: '#0EA5E9',
+              alignItems: 'center', justifyContent: 'center',
+              shadowColor: '#0EA5E9', shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.4, shadowRadius: 8, elevation: 8,
+            }}
+          >
+            <Plus size={28} color="white" />
+          </Pressable>
+        )}
+
         <CreateTankModal
-          visible={showCreateModal}
-          onClose={() => setShowCreateModal(false)}
-          onSubmit={handleCreateTank}
+          visible={showCreate}
+          onClose={() => setShowCreate(false)}
+          onSubmit={(name, size, wt) => addTank(name, size, wt)}
           isDark={isDark}
         />
-
-        <RenameTankModal
-          visible={showRenameModal}
-          onClose={() => {
-            setShowRenameModal(false);
-            setRenamingTankId(null);
-          }}
-          onSubmit={(newName) => {
-            if (renamingTankId) {
-              renameTank(renamingTankId, newName);
-            }
-          }}
-          currentName={renamingTank?.name || ''}
+        <RenameModal
+          visible={!!renamingTankId}
+          onClose={() => setRenamingTankId(null)}
+          onSubmit={(n) => { if (renamingTankId) renameTank(renamingTankId, n); }}
+          currentName={renamingTank?.name ?? ''}
           isDark={isDark}
         />
-
-        {/* Delete Confirmation Modal */}
         <Modal
-          visible={showDeleteModal}
+          visible={!!deletingTankId}
           transparent
           animationType="fade"
-          onRequestClose={() => {
-            setShowDeleteModal(false);
-            setDeletingTankId(null);
-          }}
+          onRequestClose={() => setDeletingTankId(null)}
         >
           <View className="flex-1 bg-black/50 justify-center items-center px-6">
-            <View
-              className={cn(
-                'w-full max-w-sm rounded-2xl p-6',
-                isDark ? 'bg-slate-800' : 'bg-white'
-              )}
-            >
+            <View className={cn('w-full max-w-sm rounded-2xl p-6', isDark ? 'bg-slate-800' : 'bg-white')}>
               <View className="items-center mb-4">
                 <View className="w-16 h-16 rounded-full bg-red-500/20 items-center justify-center mb-4">
                   <Trash2 size={32} color="#EF4444" />
                 </View>
-                <Text
-                  className={cn(
-                    'text-xl font-bold text-center',
-                    isDark ? 'text-white' : 'text-slate-900'
-                  )}
-                >
+                <Text className={cn('text-xl font-bold text-center', isDark ? 'text-white' : 'text-slate-900')}>
                   Delete Tank?
                 </Text>
               </View>
-              <Text
-                className={cn(
-                  'text-center mb-6',
-                  isDark ? 'text-slate-400' : 'text-slate-600'
-                )}
-              >
+              <Text className={cn('text-center mb-6', isDark ? 'text-slate-400' : 'text-slate-600')}>
                 Are you sure you want to delete "{deletingTank?.name}"? This action cannot be undone.
               </Text>
               <View className="flex-row gap-3">
                 <Pressable
-                  onPress={() => {
-                    setShowDeleteModal(false);
-                    setDeletingTankId(null);
-                  }}
-                  className={cn(
-                    'flex-1 py-3 rounded-xl',
-                    isDark ? 'bg-slate-700' : 'bg-slate-100'
-                  )}
+                  onPress={() => setDeletingTankId(null)}
+                  className={cn('flex-1 py-3 rounded-xl items-center', isDark ? 'bg-slate-700' : 'bg-slate-100')}
                 >
-                  <Text
-                    className={cn(
-                      'text-center font-semibold',
-                      isDark ? 'text-white' : 'text-slate-900'
-                    )}
-                  >
-                    Cancel
-                  </Text>
+                  <Text className={cn('font-semibold', isDark ? 'text-white' : 'text-slate-900')}>Cancel</Text>
                 </Pressable>
-                <Pressable
-                  onPress={confirmDeleteTank}
-                  className="flex-1 py-3 rounded-xl bg-red-500"
-                >
-                  <Text className="text-center font-semibold text-white">
-                    Delete
-                  </Text>
-                </Pressable>
-              </View>
-            </View>
-          </View>
-        </Modal>
-
-        {/* Delete Fish Confirmation Modal */}
-        <Modal
-          visible={showDeleteFishModal}
-          transparent
-          animationType="fade"
-          onRequestClose={() => {
-            setShowDeleteFishModal(false);
-            setDeletingFish(null);
-          }}
-        >
-          <View className="flex-1 bg-black/50 justify-center items-center px-6">
-            <View
-              className={cn(
-                'w-full max-w-sm rounded-2xl p-6',
-                isDark ? 'bg-slate-800' : 'bg-white'
-              )}
-            >
-              <View className="items-center mb-4">
-                <View className="w-16 h-16 rounded-full bg-red-500/20 items-center justify-center mb-4">
-                  <Trash2 size={32} color="#EF4444" />
-                </View>
-                <Text
-                  className={cn(
-                    'text-xl font-bold text-center',
-                    isDark ? 'text-white' : 'text-slate-900'
-                  )}
-                >
-                  Remove Fish?
-                </Text>
-              </View>
-              <Text
-                className={cn(
-                  'text-center mb-6',
-                  isDark ? 'text-slate-400' : 'text-slate-600'
-                )}
-              >
-                Are you sure you want to remove {deletingFish?.commonName} from your tank?
-              </Text>
-              <View className="flex-row gap-3">
                 <Pressable
                   onPress={() => {
-                    setShowDeleteFishModal(false);
-                    setDeletingFish(null);
+                    if (deletingTankId) {
+                      removeTank(deletingTankId);
+                      setDeletingTankId(null);
+                    }
                   }}
-                  className={cn(
-                    'flex-1 py-3 rounded-xl',
-                    isDark ? 'bg-slate-700' : 'bg-slate-100'
-                  )}
+                  className="flex-1 py-3 rounded-xl items-center bg-red-500"
                 >
-                  <Text
-                    className={cn(
-                      'text-center font-semibold',
-                      isDark ? 'text-white' : 'text-slate-900'
-                    )}
-                  >
-                    Cancel
-                  </Text>
-                </Pressable>
-                <Pressable
-                  onPress={confirmDeleteFish}
-                  className="flex-1 py-3 rounded-xl bg-red-500"
-                >
-                  <Text className="text-center font-semibold text-white">
-                    Remove
-                  </Text>
-                </Pressable>
-              </View>
-            </View>
-          </View>
-        </Modal>
-
-        {/* Delete Plant Confirmation Modal */}
-        <Modal
-          visible={showDeletePlantModal}
-          transparent
-          animationType="fade"
-          onRequestClose={() => {
-            setShowDeletePlantModal(false);
-            setDeletingPlant(null);
-          }}
-        >
-          <View className="flex-1 bg-black/50 justify-center items-center px-6">
-            <View
-              className={cn(
-                'w-full max-w-sm rounded-2xl p-6',
-                isDark ? 'bg-slate-800' : 'bg-white'
-              )}
-            >
-              <View className="items-center mb-4">
-                <View className="w-16 h-16 rounded-full bg-red-500/20 items-center justify-center mb-4">
-                  <Trash2 size={32} color="#EF4444" />
-                </View>
-                <Text
-                  className={cn(
-                    'text-xl font-bold text-center',
-                    isDark ? 'text-white' : 'text-slate-900'
-                  )}
-                >
-                  Remove Plant?
-                </Text>
-              </View>
-              <Text
-                className={cn(
-                  'text-center mb-6',
-                  isDark ? 'text-slate-400' : 'text-slate-600'
-                )}
-              >
-                Are you sure you want to remove {deletingPlant?.commonName} from your tank?
-              </Text>
-              <View className="flex-row gap-3">
-                <Pressable
-                  onPress={() => {
-                    setShowDeletePlantModal(false);
-                    setDeletingPlant(null);
-                  }}
-                  className={cn(
-                    'flex-1 py-3 rounded-xl',
-                    isDark ? 'bg-slate-700' : 'bg-slate-100'
-                  )}
-                >
-                  <Text
-                    className={cn(
-                      'text-center font-semibold',
-                      isDark ? 'text-white' : 'text-slate-900'
-                    )}
-                  >
-                    Cancel
-                  </Text>
-                </Pressable>
-                <Pressable
-                  onPress={confirmDeletePlant}
-                  className="flex-1 py-3 rounded-xl bg-red-500"
-                >
-                  <Text className="text-center font-semibold text-white">
-                    Remove
-                  </Text>
+                  <Text className="font-semibold text-white">Delete</Text>
                 </Pressable>
               </View>
             </View>
