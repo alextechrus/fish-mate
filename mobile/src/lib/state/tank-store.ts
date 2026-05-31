@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { TankSetup, WaterType } from '../types/fish';
 
 // Activity log types
-export type ActivityType = 'created' | 'fish_added' | 'fish_removed' | 'plant_added' | 'plant_removed' | 'water_change' | 'reminder_set';
+export type ActivityType = 'created' | 'fish_added' | 'fish_removed' | 'plant_added' | 'plant_removed' | 'water_change' | 'reminder_set' | 'tank_cleaned';
 
 export interface TankActivity {
   id: string;
@@ -298,9 +298,20 @@ export const useTankStore = create<TankState>()(
 
       confirmCleaned: (tankId) => {
         set(state => ({
-          tanks: state.tanks.map(t =>
-            t.id === tankId ? { ...t, lastCleanedAt: new Date().toISOString() } : t
-          ),
+          tanks: state.tanks.map(t => {
+            if (t.id !== tankId) return t;
+            const activity: TankActivity = {
+              id: `activity-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+              type: 'tank_cleaned',
+              description: 'Marked tank as cleaned',
+              timestamp: new Date(),
+            };
+            return {
+              ...t,
+              lastCleanedAt: new Date().toISOString(),
+              activities: [...(t.activities || []), activity],
+            };
+          }),
         }));
       },
 
