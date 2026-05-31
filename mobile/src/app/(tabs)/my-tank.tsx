@@ -11,7 +11,7 @@ import { useRouter } from 'expo-router';
 import {
   Plus, Trash2, Fish as FishIcon, Leaf, AlertTriangle,
   CheckCircle, X, Star, Pencil, Droplets, RefreshCw,
-  Container, Camera,
+  Container, Camera, Info, ChevronRight,
 } from 'lucide-react-native';
 import { useColorScheme } from '@/lib/useColorScheme';
 import { useTankStore, getTankCleanliness, ExtendedTankSetup } from '@/lib/state/tank-store';
@@ -132,7 +132,7 @@ const CLEAN_LABELS = { clean: 'Clean', 'due-soon': 'Due soon', overdue: 'Needs c
 
 const TankCard = ({
   tank, isActive, isFavorite, onSetActive, onDelete, onAddFish, onAddPlants,
-  onRename, onToggleFavorite, onMarkCleaned, onRegenerateImage, isDark,
+  onRename, onToggleFavorite, onMarkCleaned, onRegenerateImage, onViewDetails, isDark,
 }: {
   tank: ExtendedTankSetup;
   isActive: boolean;
@@ -145,6 +145,7 @@ const TankCard = ({
   onToggleFavorite: () => void;
   onMarkCleaned: () => void;
   onRegenerateImage: () => void;
+  onViewDetails: () => void;
   isDark: boolean;
 }) => {
   const cleanliness = getTankCleanliness(tank);
@@ -281,6 +282,16 @@ const TankCard = ({
             <Text className={cn('text-sm font-semibold', isDark ? 'text-slate-300' : 'text-slate-600')}>Plants</Text>
           </Pressable>
         </View>
+        <Pressable
+          onPress={onViewDetails}
+          className={cn('mt-2 py-2.5 rounded-xl items-center flex-row justify-center gap-2', isDark ? 'bg-slate-700/50' : 'bg-slate-100')}
+        >
+          <Info size={15} color={isDark ? '#94A3B8' : '#64748B'} />
+          <Text className={cn('text-sm font-semibold', isDark ? 'text-slate-300' : 'text-slate-600')}>
+            View Details & Alerts
+          </Text>
+          <ChevronRight size={15} color={isDark ? '#64748B' : '#94A3B8'} />
+        </Pressable>
       </View>
     </View>
   );
@@ -333,16 +344,14 @@ export default function MyTankScreen() {
 
   useEffect(() => {
     sortedTanks.forEach(tank => {
-      if (
-        tank.fishIds.length > 0 &&
-        !tank.generatedImageUrl &&
-        !autoGenerateRef.current.has(tank.id)
-      ) {
-        autoGenerateRef.current.add(tank.id);
+      if (tank.fishIds.length === 0) return;
+      const key = `${tank.id}:${tank.fishIds.length}`;
+      if (!autoGenerateRef.current.has(key)) {
+        autoGenerateRef.current.add(key);
         handleRegenerateImage(tank);
       }
     });
-  }, [sortedTanks.map(t => t.id).join(',')]);
+  }, [sortedTanks.map(t => `${t.id}:${t.fishIds.length}`).join(',')]);
 
   const handleMarkCleaned = useCallback((tank: ExtendedTankSetup) => {
     confirmCleaned(tank.id);
@@ -401,6 +410,7 @@ export default function MyTankScreen() {
                     onToggleFavorite={() => setFavoriteTank(tank.id === favoriteTankId ? null : tank.id)}
                     onMarkCleaned={() => handleMarkCleaned(tank)}
                     onRegenerateImage={() => handleRegenerateImage(tank)}
+                    onViewDetails={() => router.push(`/tank/${tank.id}`)}
                   />
                   {generatingImageFor === tank.id && (
                     <View className="items-center -mt-2 mb-4">
