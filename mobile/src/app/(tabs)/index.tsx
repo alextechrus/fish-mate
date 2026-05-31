@@ -168,7 +168,14 @@ export default function HomeScreen() {
 
   const tanks = useTankStore(s => s.tanks);
   const activeTankId = useTankStore(s => s.activeTankId);
-  const activeTank = useMemo(() => tanks.find(t => t.id === activeTankId), [tanks, activeTankId]);
+  const [viewingTankId, setViewingTankId] = useState<string | null>(activeTankId);
+
+  // Keep in sync if activeTank changes from outside
+  useEffect(() => {
+    setViewingTankId(activeTankId);
+  }, [activeTankId]);
+
+  const activeTank = useMemo(() => tanks.find(t => t.id === viewingTankId), [tanks, viewingTankId]);
 
   const tankFish: Fish[] = useMemo(() =>
     (activeTank?.fishIds ?? []).map(id => getFishById(id)).filter((f): f is Fish => !!f),
@@ -190,6 +197,49 @@ export default function HomeScreen() {
             <Text className={cn('text-2xl font-bold', isDark ? 'text-white' : 'text-slate-900')}>FishMate</Text>
             <Text className={cn('text-sm mt-0.5', isDark ? 'text-slate-400' : 'text-slate-500')}>Your aquarium companion</Text>
           </View>
+
+          {/* Tank Switcher */}
+          {tanks.length > 0 && (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 12 }}
+              style={{ flexGrow: 0 }}
+            >
+              {tanks.map(tank => (
+                <Pressable
+                  key={tank.id}
+                  onPress={() => setViewingTankId(tank.id)}
+                  style={{
+                    marginRight: 8,
+                    paddingHorizontal: 14,
+                    paddingVertical: 7,
+                    borderRadius: 20,
+                    backgroundColor: viewingTankId === tank.id
+                      ? (isDark ? '#0EA5E9' : '#0EA5E9')
+                      : (isDark ? '#1E293B' : '#E2E8F0'),
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                  }}
+                >
+                  <Text style={{
+                    color: viewingTankId === tank.id ? 'white' : isDark ? '#94A3B8' : '#64748B',
+                    fontWeight: '600',
+                    fontSize: 13,
+                  }}>
+                    {tank.name}
+                  </Text>
+                  <Text style={{
+                    color: viewingTankId === tank.id ? 'rgba(255,255,255,0.7)' : isDark ? '#64748B' : '#94A3B8',
+                    fontSize: 11,
+                    marginLeft: 5,
+                  }}>
+                    {tank.fishIds.length} fish
+                  </Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          )}
 
           {/* Animated Tank Hero */}
           <View className="mb-4">
