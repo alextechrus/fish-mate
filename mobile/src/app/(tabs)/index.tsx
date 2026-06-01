@@ -9,7 +9,7 @@ import {
   ThermometerSnowflake, FlaskConical, Leaf, Heart, Zap,
 } from 'lucide-react-native';
 import { useColorScheme } from '@/lib/useColorScheme';
-import { useTankStore } from '@/lib/state/tank-store';
+import { useTankStore, getTankCleanliness } from '@/lib/state/tank-store';
 import { getFishById, getFreshwaterFish, getSaltwaterFish, getBeginnerFriendlyFish } from '@/lib/data/fish-database';
 import { getPlantById, getEasyPlants } from '@/lib/data/plant-database';
 import { Fish } from '@/lib/types/fish';
@@ -295,18 +295,61 @@ export default function HomeScreen() {
             </ScrollView>
           )}
 
-          {/* Animated Tank Hero */}
+          {/* Tank Hero — AI photo if available, animated tank as fallback */}
           <View className="mb-4">
-            <AnimatedTank
-              fish={tankFish}
-              plants={tankPlants}
-              waterType={activeTank?.waterType ?? 'freshwater'}
-              tankName={activeTank?.name}
-              isEmpty={isEmpty}
-              onPress={() => router.push('/(tabs)/my-tank')}
-              onCreateTank={() => router.push('/(tabs)/my-tank')}
-              isDark={isDark}
-            />
+            {activeTank?.generatedImageUrl ? (
+              <Pressable onPress={() => router.push('/(tabs)/my-tank')} style={{ marginHorizontal: 20 }}>
+                <View style={{
+                  width: SCREEN_W - 40,
+                  height: 210,
+                  borderRadius: 20,
+                  overflow: 'hidden',
+                  borderWidth: 1.5,
+                  borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+                }}>
+                  <Image
+                    source={{ uri: activeTank.generatedImageUrl }}
+                    style={{ width: '100%', height: '100%' }}
+                    resizeMode="cover"
+                  />
+                  {/* Gradient overlay at bottom for text legibility */}
+                  <LinearGradient
+                    colors={['transparent', 'rgba(0,0,0,0.65)']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 0, y: 1 }}
+                    style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 80, justifyContent: 'flex-end', padding: 14 }}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <View>
+                        <Text style={{ color: 'white', fontWeight: '800', fontSize: 16 }}>{activeTank.name}</Text>
+                        <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 1, textTransform: 'capitalize' }}>
+                          {activeTank.waterType} · {tankFish.length} fish · {tankPlants.length} plants
+                        </Text>
+                      </View>
+                      <View style={{
+                        backgroundColor: getTankCleanliness(activeTank) === 'overdue' ? '#EF444490' : getTankCleanliness(activeTank) === 'due-soon' ? '#F59E0B90' : '#10B98190',
+                        borderRadius: 10, paddingHorizontal: 8, paddingVertical: 4,
+                      }}>
+                        <Text style={{ color: 'white', fontSize: 11, fontWeight: '700' }}>
+                          {getTankCleanliness(activeTank) === 'clean' ? 'Clean' : getTankCleanliness(activeTank) === 'due-soon' ? 'Due soon' : 'Needs cleaning'}
+                        </Text>
+                      </View>
+                    </View>
+                  </LinearGradient>
+                </View>
+              </Pressable>
+            ) : (
+              <AnimatedTank
+                fish={tankFish}
+                plants={tankPlants}
+                waterType={activeTank?.waterType ?? 'freshwater'}
+                tankName={activeTank?.name}
+                isEmpty={isEmpty}
+                onPress={() => router.push('/(tabs)/my-tank')}
+                onCreateTank={() => router.push('/(tabs)/my-tank')}
+                isDark={isDark}
+              />
+            )}
           </View>
 
           {/* Compatibility Quick-Access */}

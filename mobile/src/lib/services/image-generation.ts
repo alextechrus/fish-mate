@@ -180,7 +180,6 @@ export async function generateTankImage(
         prompt,
         n: 1,
         size: '1024x1024',
-        response_format: 'b64_json',
       }),
     });
 
@@ -191,9 +190,12 @@ export async function generateTankImage(
     }
 
     const data = await response.json();
+    // gpt-image-1 returns b64_json by default; fall back to url if present
     const b64 = data.data?.[0]?.b64_json;
-    if (!b64) return null;
-    return `data:image/png;base64,${b64}`;
+    if (b64) return `data:image/png;base64,${b64}`;
+    const url = data.data?.[0]?.url;
+    if (url) return url;
+    return null;
   } catch (error) {
     console.error('Error generating tank image:', error);
     return null;
