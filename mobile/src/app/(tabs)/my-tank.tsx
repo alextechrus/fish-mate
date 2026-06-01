@@ -1,5 +1,5 @@
 // src/app/(tabs)/my-tank.tsx
-import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View, Text, ScrollView, Pressable, Image, Modal,
   TextInput, TouchableWithoutFeedback, Keyboard,
@@ -11,7 +11,7 @@ import { useRouter } from 'expo-router';
 import {
   Plus, Trash2, Fish as FishIcon, Leaf, AlertTriangle,
   CheckCircle, X, Star, Pencil, Droplets, RefreshCw,
-  Container, Camera, Info, ChevronRight,
+  Container, Info, ChevronRight,
 } from 'lucide-react-native';
 import { useColorScheme } from '@/lib/useColorScheme';
 import { useTankStore, getTankCleanliness, ExtendedTankSetup } from '@/lib/state/tank-store';
@@ -20,6 +20,10 @@ import { getPlantById } from '@/lib/data/plant-database';
 import { WaterType, Fish } from '@/lib/types/fish';
 import { cn } from '@/lib/cn';
 import { generateTankImage } from '@/lib/services/image-generation';
+
+// Shared default image for all empty/ungenerated tanks — one URL, zero AI cost
+const EMPTY_TANK_IMAGE_URL =
+  'https://images.unsplash.com/photo-1584464491033-06628f3a6b7b?w=1024&q=80';
 
 // ─── Create Tank Modal ───────────────────────────────────────────────────────
 
@@ -165,32 +169,44 @@ const TankCard = ({
       style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: isDark ? 0.3 : 0.1, shadowRadius: 8, elevation: 4 }}
     >
       {/* AI image or gradient placeholder */}
-      {imageUri ? (
-        <Image source={{ uri: imageUri }} style={{ width: '100%', height: 180 }} resizeMode="cover" />
-      ) : (
-        <LinearGradient
-          colors={tank.waterType === 'saltwater' ? ['#0A3D62', '#0C6E8A'] : ['#0A3D5C', '#0B5270']}
-          style={{ height: 180, alignItems: 'center', justifyContent: 'center' }}
-        >
-          {isGenerating ? (
-            <>
-              <ActivityIndicator size="large" color="rgba(255,255,255,0.7)" />
-              <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, marginTop: 10, fontWeight: '600' }}>
-                Generating tank image…
-              </Text>
-            </>
-          ) : (
-            <>
-              <FishIcon size={48} color="rgba(255,255,255,0.3)" />
-              {tank.fishIds.length === 0 && (
-                <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, marginTop: 8 }}>
-                  Add fish to generate an image
-                </Text>
-              )}
-            </>
-          )}
-        </LinearGradient>
-      )}
+      {/* Tank image — always shown (default or AI-generated) */}
+      <View style={{ position: 'relative' }}>
+        <Image
+          source={{ uri: imageUri ?? EMPTY_TANK_IMAGE_URL }}
+          style={{ width: '100%', height: 180 }}
+          resizeMode="cover"
+        />
+        {/* Generating overlay */}
+        {isGenerating && (
+          <View style={{
+            position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.55)',
+            alignItems: 'center', justifyContent: 'center',
+          }}>
+            <ActivityIndicator size="large" color="white" />
+            <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 13, fontWeight: '600', marginTop: 10 }}>
+              Generating your tank image…
+            </Text>
+          </View>
+        )}
+        {/* Refresh button — only visible when tank has fish and not currently generating */}
+        {tank.fishIds.length > 0 && !isGenerating && (
+          <Pressable
+            onPress={onRegenerateImage}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={{
+              position: 'absolute', top: 10, right: 10,
+              backgroundColor: 'rgba(0,0,0,0.5)',
+              borderRadius: 20, paddingHorizontal: 10, paddingVertical: 6,
+              flexDirection: 'row', alignItems: 'center',
+            }}
+          >
+            <RefreshCw size={13} color="white" />
+            <Text style={{ color: 'white', fontSize: 11, fontWeight: '700', marginLeft: 5 }}>
+              {imageUri ? 'Refresh' : 'Generate AI Image'}
+            </Text>
+          </Pressable>
+        )}
+      </View>
 
       {/* Overlay badges */}
       <View style={{ position: 'absolute', top: 12, left: 12, flexDirection: 'row', gap: 6 }}>
@@ -333,16 +349,14 @@ export default function MyTankScreen() {
   const [renamingTankId, setRenamingTankId] = useState<string | null>(null);
   const [deletingTankId, setDeletingTankId] = useState<string | null>(null);
   const deletingTank = tanks.find(t => t.id === deletingTankId);
-  // Track which tanks are generating (ref = no stale closure, state = for UI updates)
+  // Track which tanks are currently generating an AI image
   const generatingRef = useRef<Set<string>>(new Set());
   const [generatingSet, setGeneratingSet] = useState<Set<string>>(new Set());
-  // Track which tank+fishCount combos have been queued so we don't double-fire
-  const queuedRef = useRef<Set<string>>(new Set());
 
   const sortedTanks = getSortedTanks();
   const renamingTank = tanks.find(t => t.id === renamingTankId);
 
-  // Stable image generation — no useCallback stale closure issues
+  // On-demand image generation — only called when the user taps Refresh
   const generateImage = async (tank: ExtendedTankSetup) => {
     if (generatingRef.current.has(tank.id)) return;
     generatingRef.current.add(tank.id);
@@ -361,24 +375,8 @@ export default function MyTankScreen() {
     setGeneratingSet(prev => { const s = new Set(prev); s.delete(tank.id); return s; });
   };
 
-  // Auto-generate whenever a tank's fish count changes (covers new tanks + fish added)
-  const fishCountKey = sortedTanks.map(t => `${t.id}:${t.fishIds.length}`).join(',');
-  useEffect(() => {
-    sortedTanks.forEach(tank => {
-      if (tank.fishIds.length === 0) return;
-      const key = `${tank.id}:${tank.fishIds.length}`;
-      if (!queuedRef.current.has(key)) {
-        queuedRef.current.add(key);
-        generateImage(tank);
-      }
-    });
-  }, [fishCountKey]); // eslint-disable-line react-hooks/exhaustive-deps
-
   const handleMarkCleaned = (tank: ExtendedTankSetup) => {
     confirmCleaned(tank.id);
-    // Force regenerate with clean state by clearing the queued key first
-    const key = `${tank.id}:${tank.fishIds.length}`;
-    queuedRef.current.delete(key);
     generateImage({ ...tank, lastCleanedAt: new Date().toISOString() });
   };
 
