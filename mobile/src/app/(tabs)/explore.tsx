@@ -6,7 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import {
   Bookmark, BookmarkCheck, Heart, ChevronDown, ChevronUp,
   Compass, Newspaper, HelpCircle, BookOpen, Globe, Lock,
-  X, RefreshCw, Fish as FishIconDetail, Clock,
+  X, RefreshCw, Fish as FishIconDetail, Clock, SlidersHorizontal,
 } from 'lucide-react-native';
 import { useColorScheme } from '@/lib/useColorScheme';
 import { useExploreStore } from '@/lib/state/explore-store';
@@ -265,6 +265,7 @@ export default function ExploreScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const [activeFilter, setActiveFilter] = useState<TankTag | 'all'>('all');
+  const [filterOpen, setFilterOpen] = useState(false);
   const [detailTank, setDetailTank] = useState<CommunityTank | null>(null);
   const [communityImages, setCommunityImages] = useState<Record<string, string>>({});
   const [generatingImage, setGeneratingImage] = useState<string | null>(null);
@@ -309,28 +310,68 @@ export default function ExploreScreen() {
             <Text className="text-white/70 text-sm">Community tanks, articles & FAQs</Text>
           </LinearGradient>
 
-          {/* Filter chips */}
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 14 }}
-            style={{ flexGrow: 0 }}
-          >
-            {ALL_FILTERS.map(f => (
-              <Pressable
-                key={f}
-                onPress={() => setActiveFilter(f)}
-                className={cn(
-                  'px-4 py-2 rounded-full mr-2',
-                  activeFilter === f ? 'bg-sky-500' : isDark ? 'bg-slate-800' : 'bg-white border border-slate-200'
-                )}
+          {/* Filter button */}
+          <View className={cn('mx-5 mt-4 mb-2', '')}>
+            <Pressable
+              onPress={() => setFilterOpen(o => !o)}
+              className={cn(
+                'flex-row items-center self-start px-4 py-2.5 rounded-xl',
+                filterOpen || activeFilter !== 'all'
+                  ? 'bg-sky-500'
+                  : isDark ? 'bg-slate-800' : 'bg-white border border-slate-200'
+              )}
+              style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 }}
+            >
+              <SlidersHorizontal
+                size={15}
+                color={filterOpen || activeFilter !== 'all' ? 'white' : isDark ? '#94A3B8' : '#64748B'}
+              />
+              <Text className={cn(
+                'text-sm font-semibold ml-2 capitalize',
+                filterOpen || activeFilter !== 'all' ? 'text-white' : isDark ? 'text-slate-300' : 'text-slate-700'
+              )}>
+                {activeFilter === 'all' ? 'Filter' : activeFilter}
+              </Text>
+              {filterOpen
+                ? <ChevronUp size={15} color={filterOpen || activeFilter !== 'all' ? 'white' : isDark ? '#94A3B8' : '#64748B'} style={{ marginLeft: 6 }} />
+                : <ChevronDown size={15} color={activeFilter !== 'all' ? 'white' : isDark ? '#94A3B8' : '#64748B'} style={{ marginLeft: 6 }} />
+              }
+            </Pressable>
+
+            {/* Dropdown panel */}
+            {filterOpen && (
+              <View
+                className={cn('mt-2 rounded-2xl p-4', isDark ? 'bg-slate-800' : 'bg-white')}
+                style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: isDark ? 0.3 : 0.1, shadowRadius: 12, elevation: 6 }}
               >
-                <Text className={cn('text-sm font-semibold capitalize', activeFilter === f ? 'text-white' : isDark ? 'text-slate-300' : 'text-slate-600')}>
-                  {f === 'all' ? 'All' : f}
+                <Text className={cn('text-xs font-semibold mb-3 uppercase tracking-widest', isDark ? 'text-slate-500' : 'text-slate-400')}>
+                  Tank Type
                 </Text>
-              </Pressable>
-            ))}
-          </ScrollView>
+                <View className="flex-row flex-wrap gap-2">
+                  {ALL_FILTERS.map(f => (
+                    <Pressable
+                      key={f}
+                      onPress={() => {
+                        setActiveFilter(f);
+                        setFilterOpen(false);
+                      }}
+                      className={cn(
+                        'px-4 py-2 rounded-full',
+                        activeFilter === f ? 'bg-sky-500' : isDark ? 'bg-slate-700' : 'bg-slate-100'
+                      )}
+                    >
+                      <Text className={cn(
+                        'text-sm font-semibold capitalize',
+                        activeFilter === f ? 'text-white' : isDark ? 'text-slate-300' : 'text-slate-600'
+                      )}>
+                        {f === 'all' ? 'All Types' : f}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+            )}
+          </View>
 
           {/* Featured Tanks */}
           <View className="mb-2">
