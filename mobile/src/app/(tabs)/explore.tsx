@@ -311,43 +311,68 @@ export default function ExploreScreen() {
           </LinearGradient>
 
           {/* Filter button */}
-          <View className={cn('mx-5 mt-4 mb-2', '')}>
+          <View style={{ marginHorizontal: 20, marginTop: 16, marginBottom: 8 }}>
             <Pressable
               onPress={() => setFilterOpen(o => !o)}
-              className={cn(
-                'flex-row items-center self-start px-4 py-2.5 rounded-xl',
-                filterOpen || activeFilter !== 'all'
-                  ? 'bg-sky-500'
-                  : isDark ? 'bg-slate-800' : 'bg-white border border-slate-200'
-              )}
-              style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 }}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                alignSelf: 'flex-start',
+                paddingHorizontal: 14,
+                paddingVertical: 9,
+                borderRadius: 12,
+                backgroundColor: filterOpen || activeFilter !== 'all'
+                  ? '#0EA5E9'
+                  : isDark ? '#1E293B' : '#FFFFFF',
+                borderWidth: filterOpen || activeFilter !== 'all' ? 0 : 1,
+                borderColor: isDark ? '#334155' : '#E2E8F0',
+              }}
             >
               <SlidersHorizontal
                 size={15}
                 color={filterOpen || activeFilter !== 'all' ? 'white' : isDark ? '#94A3B8' : '#64748B'}
               />
-              <Text className={cn(
-                'text-sm font-semibold ml-2 capitalize',
-                filterOpen || activeFilter !== 'all' ? 'text-white' : isDark ? 'text-slate-300' : 'text-slate-700'
-              )}>
+              <Text style={{
+                marginLeft: 7,
+                fontSize: 13,
+                fontWeight: '600',
+                textTransform: 'capitalize',
+                color: filterOpen || activeFilter !== 'all' ? 'white' : isDark ? '#CBD5E1' : '#374151',
+              }}>
                 {activeFilter === 'all' ? 'Filter' : activeFilter}
               </Text>
-              {filterOpen
-                ? <ChevronUp size={15} color={filterOpen || activeFilter !== 'all' ? 'white' : isDark ? '#94A3B8' : '#64748B'} style={{ marginLeft: 6 }} />
-                : <ChevronDown size={15} color={activeFilter !== 'all' ? 'white' : isDark ? '#94A3B8' : '#64748B'} style={{ marginLeft: 6 }} />
-              }
+              <View style={{ marginLeft: 7 }}>
+                {filterOpen
+                  ? <ChevronUp size={14} color={filterOpen || activeFilter !== 'all' ? 'white' : isDark ? '#94A3B8' : '#64748B'} />
+                  : <ChevronDown size={14} color={activeFilter !== 'all' ? 'white' : isDark ? '#94A3B8' : '#64748B'} />
+                }
+              </View>
             </Pressable>
 
             {/* Dropdown panel */}
             {filterOpen && (
-              <View
-                className={cn('mt-2 rounded-2xl p-4', isDark ? 'bg-slate-800' : 'bg-white')}
-                style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: isDark ? 0.3 : 0.1, shadowRadius: 12, elevation: 6 }}
-              >
-                <Text className={cn('text-xs font-semibold mb-3 uppercase tracking-widest', isDark ? 'text-slate-500' : 'text-slate-400')}>
+              <View style={{
+                marginTop: 8,
+                borderRadius: 16,
+                padding: 16,
+                backgroundColor: isDark ? '#1E293B' : '#FFFFFF',
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: isDark ? 0.3 : 0.1,
+                shadowRadius: 12,
+                elevation: 6,
+              }}>
+                <Text style={{
+                  fontSize: 11,
+                  fontWeight: '700',
+                  letterSpacing: 1,
+                  textTransform: 'uppercase',
+                  color: isDark ? '#475569' : '#94A3B8',
+                  marginBottom: 12,
+                }}>
                   Tank Type
                 </Text>
-                <View className="flex-row flex-wrap gap-2">
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                   {ALL_FILTERS.map(f => (
                     <Pressable
                       key={f}
@@ -355,15 +380,21 @@ export default function ExploreScreen() {
                         setActiveFilter(f);
                         setFilterOpen(false);
                       }}
-                      className={cn(
-                        'px-4 py-2 rounded-full',
-                        activeFilter === f ? 'bg-sky-500' : isDark ? 'bg-slate-700' : 'bg-slate-100'
-                      )}
+                      style={{
+                        paddingHorizontal: 16,
+                        paddingVertical: 8,
+                        borderRadius: 20,
+                        backgroundColor: activeFilter === f
+                          ? '#0EA5E9'
+                          : isDark ? '#334155' : '#F1F5F9',
+                      }}
                     >
-                      <Text className={cn(
-                        'text-sm font-semibold capitalize',
-                        activeFilter === f ? 'text-white' : isDark ? 'text-slate-300' : 'text-slate-600'
-                      )}>
+                      <Text style={{
+                        fontSize: 13,
+                        fontWeight: '600',
+                        textTransform: 'capitalize',
+                        color: activeFilter === f ? 'white' : isDark ? '#CBD5E1' : '#475569',
+                      }}>
                         {f === 'all' ? 'All Types' : f}
                       </Text>
                     </Pressable>
