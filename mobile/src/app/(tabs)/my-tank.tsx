@@ -1,5 +1,6 @@
 // src/app/(tabs)/my-tank.tsx
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   View, Text, ScrollView, Pressable, Image, Modal,
   TextInput, TouchableWithoutFeedback, Keyboard,
@@ -19,12 +20,11 @@ import { getFishById } from '@/lib/data/fish-database';
 import { getPlantById } from '@/lib/data/plant-database';
 import { WaterType, Fish } from '@/lib/types/fish';
 import { cn } from '@/lib/cn';
-import { generateTankImage } from '@/lib/services/image-generation';
-import { AnimatedTank } from '@/components/AnimatedTank';
+import { generateTankImage, generateEmptyTankImage } from '@/lib/services/image-generation';
 import { getFishById } from '@/lib/data/fish-database';
 import { getPlantById } from '@/lib/data/plant-database';
-import type { Plant } from '@/lib/data/plant-database';
-import { Fish } from '@/lib/types/fish';
+
+const EMPTY_TANK_CACHE_KEY = 'fishmate_default_empty_tank_v1';
 
 // ─── Create Tank Modal ───────────────────────────────────────────────────────
 
@@ -128,21 +128,6 @@ const RenameModal = ({
   );
 };
 
-// Derives fish/plant objects and renders the AnimatedTank inside a card
-const TankCardAnimated = ({ tank, isDark }: { tank: ExtendedTankSetup; isDark: boolean }) => {
-  const fish: Fish[] = tank.fishIds.map(id => getFishById(id)).filter((f): f is Fish => !!f);
-  const plants: Plant[] = (tank.plantIds ?? []).map(id => getPlantById(id)).filter((p): p is Plant => !!p);
-  return (
-    <AnimatedTank
-      fish={fish}
-      plants={plants}
-      waterType={tank.waterType}
-      isEmpty={false}
-      isDark={isDark}
-    />
-  );
-};
-
 // ─── Cleanliness constants ────────────────────────────────────────────────────
 
 const CLEAN_COLORS = { clean: '#10B981', 'due-soon': '#F59E0B', overdue: '#EF4444' } as const;
@@ -151,13 +136,15 @@ const CLEAN_LABELS = { clean: 'Clean', 'due-soon': 'Due soon', overdue: 'Needs c
 // ─── Tank Card ───────────────────────────────────────────────────────────────
 
 const TankCard = ({
-  tank, isActive, isFavorite, isGenerating, onSetActive, onDelete, onAddFish, onAddPlants,
+  tank, isActive, isFavorite, isGenerating, emptyTankImageUri,
+  onSetActive, onDelete, onAddFish, onAddPlants,
   onRename, onToggleFavorite, onMarkCleaned, onRegenerateImage, onViewDetails, isDark,
 }: {
   tank: ExtendedTankSetup;
   isActive: boolean;
   isFavorite: boolean;
   isGenerating: boolean;
+  emptyTankImageUri: string | null;
   onSetActive: () => void;
   onDelete: () => void;
   onAddFish: () => void;
@@ -185,25 +172,22 @@ const TankCard = ({
       style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: isDark ? 0.3 : 0.1, shadowRadius: 8, elevation: 4 }}
     >
       {/* AI image or gradient placeholder */}
-      {/* Tank image section */}
+      {/* Tank image — two states: AI-generated photo OR default empty tank */}
       <View style={{ position: 'relative', height: 180 }}>
-        {imageUri ? (
-          /* AI-generated photo */
-          <Image source={{ uri: imageUri }} style={{ width: '100%', height: 180 }} resizeMode="cover" />
-        ) : tank.fishIds.length === 0 && (tank.plantIds ?? []).length === 0 ? (
-          /* Genuinely empty tank — gradient placeholder, nothing to generate */
+        {(imageUri ?? emptyTankImageUri) ? (
+          <Image
+            source={{ uri: imageUri ?? emptyTankImageUri! }}
+            style={{ width: '100%', height: 180 }}
+            resizeMode="cover"
+          />
+        ) : (
+          /* Fallback while empty tank image is loading/generating */
           <LinearGradient
             colors={tank.waterType === 'saltwater' ? ['#0A2744', '#0A3D62'] : ['#062033', '#0A3D5C']}
             style={{ height: 180, alignItems: 'center', justifyContent: 'center' }}
           >
-            <FishIcon size={40} color="rgba(255,255,255,0.25)" />
-            <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, marginTop: 10, fontWeight: '600' }}>
-              Add fish or plants to get started
-            </Text>
+            <ActivityIndicator color="rgba(255,255,255,0.5)" />
           </LinearGradient>
-        ) : (
-          /* Has fish/plants but no AI image yet — show animated preview */
-          <TankCardAnimated tank={tank} isDark={isDark} />
         )}
 
         {/* Generating overlay */}
@@ -220,8 +204,8 @@ const TankCard = ({
           </View>
         )}
 
-        {/* Refresh / Generate button — only when tank has fish and not currently generating */}
-        {tank.fishIds.length > 0 && !isGenerating && (
+        {/* Generate / Refresh button — only when tank has fish or plants, not while generating */}
+        {(tank.fishIds.length > 0 || (tank.plantIds ?? []).length > 0) && !isGenerating && (
           <Pressable
             onPress={onRegenerateImage}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -384,6 +368,24 @@ export default function MyTankScreen() {
   // Track which tanks are currently generating an AI image
   const generatingRef = useRef<Set<string>>(new Set());
   const [generatingSet, setGeneratingSet] = useState<Set<string>>(new Set());
+  // Shared default empty tank image — generated once, cached in AsyncStorage
+  const [emptyTankImageUri, setEmptyTankImageUri] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const cached = await AsyncStorage.getItem(EMPTY_TANK_CACHE_KEY);
+        if (cached) { setEmptyTankImageUri(cached); return; }
+        const uri = await generateEmptyTankImage();
+        if (uri) {
+          setEmptyTankImageUri(uri);
+          await AsyncStorage.setItem(EMPTY_TANK_CACHE_KEY, uri);
+        }
+      } catch (e) {
+        console.error('Failed to load empty tank image:', e);
+      }
+    })();
+  }, []);
 
   const sortedTanks = getSortedTanks();
   const renamingTank = tanks.find(t => t.id === renamingTankId);
@@ -456,6 +458,7 @@ export default function MyTankScreen() {
                   isActive={tank.id === activeTankId}
                   isFavorite={tank.id === favoriteTankId}
                   isGenerating={generatingSet.has(tank.id)}
+                  emptyTankImageUri={emptyTankImageUri}
                   isDark={isDark}
                   onSetActive={() => setActiveTank(tank.id === activeTankId ? null : tank.id)}
                   onDelete={() => setDeletingTankId(tank.id)}

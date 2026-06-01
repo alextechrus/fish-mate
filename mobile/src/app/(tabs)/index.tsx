@@ -10,6 +10,9 @@ import {
 } from 'lucide-react-native';
 import { useColorScheme } from '@/lib/useColorScheme';
 import { useTankStore, getTankCleanliness } from '@/lib/state/tank-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const EMPTY_TANK_CACHE_KEY = 'fishmate_default_empty_tank_v1';
 import { getFishById, getFreshwaterFish, getSaltwaterFish, getBeginnerFriendlyFish } from '@/lib/data/fish-database';
 import { getPlantById, getEasyPlants } from '@/lib/data/plant-database';
 import { Fish } from '@/lib/types/fish';
@@ -237,6 +240,11 @@ export default function HomeScreen() {
 
   const isEmpty = !activeTank || (tankFish.length === 0 && tankPlants.length === 0);
 
+  const [emptyTankImageUri, setEmptyTankImageUri] = useState<string | null>(null);
+  useEffect(() => {
+    AsyncStorage.getItem(EMPTY_TANK_CACHE_KEY).then(v => { if (v) setEmptyTankImageUri(v); }).catch(() => {});
+  }, []);
+
   const freshwaterFish = getFreshwaterFish().slice(0, 8);
   const saltwaterFish = getSaltwaterFish().slice(0, 8);
   const beginnerFish = getBeginnerFriendlyFish().slice(0, 8);
@@ -295,9 +303,9 @@ export default function HomeScreen() {
             </ScrollView>
           )}
 
-          {/* Tank Hero — AI photo if generated, AnimatedTank otherwise */}
+          {/* Tank Hero — AI photo > empty tank default > AnimatedTank */}
           <View className="mb-4">
-            {activeTank?.generatedImageUrl ? (
+            {(activeTank?.generatedImageUrl ?? emptyTankImageUri) ? (
               <Pressable onPress={() => router.push('/(tabs)/my-tank')} style={{ marginHorizontal: 20 }}>
                 <View style={{
                   width: SCREEN_W - 40, height: 210, borderRadius: 20,
@@ -305,7 +313,7 @@ export default function HomeScreen() {
                   borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
                 }}>
                   <Image
-                    source={{ uri: activeTank.generatedImageUrl }}
+                    source={{ uri: activeTank?.generatedImageUrl ?? emptyTankImageUri ?? '' }}
                     style={{ width: '100%', height: '100%' }}
                     resizeMode="cover"
                   />

@@ -147,6 +147,32 @@ export async function generateImageBase64(
 }
 
 /**
+ * Generate a default empty aquarium tank image (called once, cached by the caller)
+ */
+export async function generateEmptyTankImage(): Promise<string | null> {
+  if (!OPENAI_API_KEY) return null;
+
+  const prompt =
+    'A pristine professional photograph of a brand-new empty freshwater aquarium tank. ' +
+    'Crystal clear water, fine natural gravel substrate, spotless glass panels, soft aquarium lighting. ' +
+    'Absolutely no fish, no plants, no decorations — completely empty and ready to be set up. ' +
+    'Commercial aquarium photography, studio quality, realistic.';
+
+  try {
+    const response = await fetch('https://api.openai.com/v1/images/generations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${OPENAI_API_KEY}` },
+      body: JSON.stringify({ model: 'gpt-image-1', prompt, n: 1, size: '1024x1024' }),
+    });
+    if (!response.ok) { console.error('Empty tank generation failed:', await response.text()); return null; }
+    const data = await response.json();
+    const b64 = data.data?.[0]?.b64_json;
+    if (b64) return `data:image/png;base64,${b64}`;
+    return data.data?.[0]?.url ?? null;
+  } catch (e) { console.error('Error generating empty tank image:', e); return null; }
+}
+
+/**
  * Generate an AI image of a complete aquarium tank with specified fish and plants
  */
 export async function generateTankImage(
@@ -161,12 +187,19 @@ export async function generateTankImage(
   }
 
   const fishList = fishNames.length > 0 ? fishNames.join(', ') : 'tropical fish';
-  const plantList = plantNames.length > 0 ? `with ${plantNames.join(', ')} aquatic plants` : 'with natural aquatic plants';
-  const waterDesc = waterType === 'saltwater' ? 'saltwater marine' : 'freshwater planted';
+  const plantDesc = plantNames.length > 0
+    ? `planted with ${plantNames.join(', ')}`
+    : 'with natural gravel substrate and minimal hardscape';
+  const waterDesc = waterType === 'saltwater' ? 'saltwater marine reef' : 'freshwater planted';
 
   const prompt = isDirty
-    ? `A neglected ${waterDesc} aquarium with ${fishList} ${plantList}. Murky cloudy green water, algae coating the glass, debris on the substrate, brown and overgrown plants. Realistic aquarium photography.`
-    : `A stunning professional ${waterDesc} aquarium containing ${fishList} ${plantList}. Crystal clear water, spotless glass, vibrant healthy plants, perfect aquarium lighting, beautiful aquascape layout. National Geographic quality aquarium photography.`;
+    ? `A neglected ${waterDesc} aquarium tank containing ${fishList} fish, ${plantDesc}. ` +
+      `Murky cloudy green water, algae coating the inside glass, debris on the substrate, brown deteriorating plants. ` +
+      `The fish are clearly identifiable as ${fishList}. Realistic aquarium photography.`
+    : `A stunning professional ${waterDesc} aquarium tank containing ${fishList} fish, ${plantDesc}. ` +
+      `The fish are swimming naturally and are clearly recognisable as ${fishList}. ` +
+      `Crystal clear water, spotless glass, vibrant healthy plants, perfect aquarium lighting, beautiful aquascape. ` +
+      `National Geographic quality aquarium photography, highly realistic and detailed.`;
 
   try {
     const response = await fetch('https://api.openai.com/v1/images/generations', {
