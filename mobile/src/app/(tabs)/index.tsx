@@ -5,21 +5,70 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import {
-  Grid3X3, ChevronRight, Lightbulb, Droplets,
+  Grid3X3, ChevronRight, Lightbulb, Droplets, Shell, Sparkles,
   ThermometerSnowflake, FlaskConical, Leaf, Heart, Zap,
 } from 'lucide-react-native';
 import { useColorScheme } from '@/lib/useColorScheme';
 import { useTankStore } from '@/lib/state/tank-store';
-import { getFishById } from '@/lib/data/fish-database';
-import { getPlantById } from '@/lib/data/plant-database';
+import { getFishById, getFreshwaterFish, getSaltwaterFish, getBeginnerFriendlyFish } from '@/lib/data/fish-database';
+import { getPlantById, getEasyPlants } from '@/lib/data/plant-database';
 import { Fish } from '@/lib/types/fish';
 import type { Plant } from '@/lib/data/plant-database';
 import { cn } from '@/lib/cn';
 import { AnimatedTank } from '@/components/AnimatedTank';
 import { newsItems } from '@/lib/data/articles';
+import { useFishImage, usePlantImage } from '@/lib/hooks/useImageUrl';
 
 const SCREEN_W = Dimensions.get('window').width;
 const CARD_W = SCREEN_W - 80;
+
+// ─── Fish card ───────────────────────────────────────────────────────────────
+const FishCard = ({ fish, onPress, isDark }: { fish: Fish; onPress: () => void; isDark: boolean }) => {
+  const imageUrl = useFishImage(fish.id, fish.imageUrl, fish.commonName, fish.scientificName);
+  const temperamentColor = { peaceful: '#10B981', 'semi-aggressive': '#F59E0B', aggressive: '#EF4444' }[fish.temperament];
+  return (
+    <Pressable
+      onPress={onPress}
+      className={cn('mr-4 w-36 rounded-2xl overflow-hidden', isDark ? 'bg-slate-800' : 'bg-white')}
+      style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: isDark ? 0.3 : 0.08, shadowRadius: 6, elevation: 3 }}
+    >
+      <Image source={imageUrl} className="w-full h-24" resizeMode="cover" />
+      <View className="p-3">
+        <Text className={cn('text-sm font-semibold mb-1', isDark ? 'text-white' : 'text-slate-900')} numberOfLines={1}>
+          {fish.commonName}
+        </Text>
+        <View className="flex-row items-center">
+          <View className="w-2 h-2 rounded-full mr-1.5" style={{ backgroundColor: temperamentColor }} />
+          <Text className={cn('text-xs capitalize', isDark ? 'text-slate-400' : 'text-slate-500')}>{fish.temperament}</Text>
+        </View>
+      </View>
+    </Pressable>
+  );
+};
+
+// ─── Plant card ──────────────────────────────────────────────────────────────
+const PlantCard = ({ plant, onPress, isDark }: { plant: Plant; onPress: () => void; isDark: boolean }) => {
+  const imageUrl = usePlantImage(plant.id, plant.imageUrl, plant.commonName, plant.scientificName);
+  const difficultyColor = { easy: '#10B981', moderate: '#F59E0B', difficult: '#EF4444' }[plant.difficulty];
+  return (
+    <Pressable
+      onPress={onPress}
+      className={cn('mr-4 w-36 rounded-2xl overflow-hidden', isDark ? 'bg-slate-800' : 'bg-white')}
+      style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: isDark ? 0.3 : 0.08, shadowRadius: 6, elevation: 3 }}
+    >
+      <Image source={imageUrl} className="w-full h-24" resizeMode="cover" />
+      <View className="p-3">
+        <Text className={cn('text-sm font-semibold mb-1', isDark ? 'text-white' : 'text-slate-900')} numberOfLines={1}>
+          {plant.commonName}
+        </Text>
+        <View className="flex-row items-center">
+          <View className="w-2 h-2 rounded-full mr-1.5" style={{ backgroundColor: difficultyColor }} />
+          <Text className={cn('text-xs capitalize', isDark ? 'text-slate-400' : 'text-slate-500')}>{plant.difficulty}</Text>
+        </View>
+      </View>
+    </Pressable>
+  );
+};
 
 const aquariumTips = [
   { icon: Droplets, iconColor: '#0EA5E9', title: 'Water Changes Matter', content: 'Regular 25% weekly water changes help remove toxins and keep your fish healthy. Use a gravel vacuum to clean the substrate.' },
@@ -188,6 +237,11 @@ export default function HomeScreen() {
 
   const isEmpty = !activeTank || (tankFish.length === 0 && tankPlants.length === 0);
 
+  const freshwaterFish = getFreshwaterFish().slice(0, 8);
+  const saltwaterFish = getSaltwaterFish().slice(0, 8);
+  const beginnerFish = getBeginnerFriendlyFish().slice(0, 8);
+  const easyPlants = getEasyPlants().slice(0, 8);
+
   return (
     <View className={cn('flex-1', isDark ? 'bg-slate-900' : 'bg-slate-50')}>
       <SafeAreaView edges={['top']} className="flex-1">
@@ -276,6 +330,74 @@ export default function HomeScreen() {
               <ChevronRight size={20} color="rgba(255,255,255,0.6)" />
             </LinearGradient>
           </Pressable>
+
+          {/* Freshwater Fish */}
+          <View className="mb-6">
+            <View className="flex-row justify-between items-center px-5 mb-3">
+              <View className="flex-row items-center">
+                <Droplets size={18} color="#0EA5E9" />
+                <Text className={cn('text-lg font-bold ml-2', isDark ? 'text-white' : 'text-slate-900')}>Freshwater Fish</Text>
+              </View>
+              <Pressable onPress={() => router.push('/(tabs)/search')} className="flex-row items-center">
+                <Text className="text-sky-500 text-sm font-medium mr-1">See All</Text>
+                <ChevronRight size={16} color="#0EA5E9" />
+              </Pressable>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20 }} style={{ flexGrow: 0 }}>
+              {freshwaterFish.map(fish => <FishCard key={fish.id} fish={fish} onPress={() => router.push(`/fish/${fish.id}`)} isDark={isDark} />)}
+            </ScrollView>
+          </View>
+
+          {/* Saltwater Fish */}
+          <View className="mb-6">
+            <View className="flex-row justify-between items-center px-5 mb-3">
+              <View className="flex-row items-center">
+                <Shell size={18} color="#06B6D4" />
+                <Text className={cn('text-lg font-bold ml-2', isDark ? 'text-white' : 'text-slate-900')}>Saltwater Fish</Text>
+              </View>
+              <Pressable onPress={() => router.push('/(tabs)/search')} className="flex-row items-center">
+                <Text className="text-sky-500 text-sm font-medium mr-1">See All</Text>
+                <ChevronRight size={16} color="#0EA5E9" />
+              </Pressable>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20 }} style={{ flexGrow: 0 }}>
+              {saltwaterFish.map(fish => <FishCard key={fish.id} fish={fish} onPress={() => router.push(`/fish/${fish.id}`)} isDark={isDark} />)}
+            </ScrollView>
+          </View>
+
+          {/* Easy Plants */}
+          <View className="mb-6">
+            <View className="flex-row justify-between items-center px-5 mb-3">
+              <View className="flex-row items-center">
+                <Leaf size={18} color="#10B981" />
+                <Text className={cn('text-lg font-bold ml-2', isDark ? 'text-white' : 'text-slate-900')}>Easy Plants</Text>
+              </View>
+              <Pressable onPress={() => router.push('/(tabs)/search')} className="flex-row items-center">
+                <Text className="text-sky-500 text-sm font-medium mr-1">See All</Text>
+                <ChevronRight size={16} color="#0EA5E9" />
+              </Pressable>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20 }} style={{ flexGrow: 0 }}>
+              {easyPlants.map(plant => <PlantCard key={plant.id} plant={plant} onPress={() => router.push(`/plant/${plant.id}`)} isDark={isDark} />)}
+            </ScrollView>
+          </View>
+
+          {/* Beginner Friendly */}
+          <View className="mb-6">
+            <View className="flex-row justify-between items-center px-5 mb-3">
+              <View className="flex-row items-center">
+                <Sparkles size={18} color="#F59E0B" />
+                <Text className={cn('text-lg font-bold ml-2', isDark ? 'text-white' : 'text-slate-900')}>Beginner Friendly</Text>
+              </View>
+              <Pressable onPress={() => router.push('/(tabs)/search')} className="flex-row items-center">
+                <Text className="text-sky-500 text-sm font-medium mr-1">See All</Text>
+                <ChevronRight size={16} color="#0EA5E9" />
+              </Pressable>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20 }} style={{ flexGrow: 0 }}>
+              {beginnerFish.map(fish => <FishCard key={fish.id} fish={fish} onPress={() => router.push(`/fish/${fish.id}`)} isDark={isDark} />)}
+            </ScrollView>
+          </View>
 
           {/* News Carousel */}
           <NewsCarousel isDark={isDark} />
