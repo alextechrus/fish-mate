@@ -131,12 +131,13 @@ const CLEAN_LABELS = { clean: 'Clean', 'due-soon': 'Due soon', overdue: 'Needs c
 // ─── Tank Card ───────────────────────────────────────────────────────────────
 
 const TankCard = ({
-  tank, isActive, isFavorite, onSetActive, onDelete, onAddFish, onAddPlants,
+  tank, isActive, isFavorite, isGenerating, onSetActive, onDelete, onAddFish, onAddPlants,
   onRename, onToggleFavorite, onMarkCleaned, onRegenerateImage, onViewDetails, isDark,
 }: {
   tank: ExtendedTankSetup;
   isActive: boolean;
   isFavorite: boolean;
+  isGenerating: boolean;
   onSetActive: () => void;
   onDelete: () => void;
   onAddFish: () => void;
@@ -171,11 +172,23 @@ const TankCard = ({
           colors={tank.waterType === 'saltwater' ? ['#0A3D62', '#0C6E8A'] : ['#0A3D5C', '#0B5270']}
           style={{ height: 180, alignItems: 'center', justifyContent: 'center' }}
         >
-          <FishIcon size={48} color="rgba(255,255,255,0.3)" />
-          <Pressable onPress={onRegenerateImage} className="mt-3 bg-white/20 px-4 py-2 rounded-full flex-row items-center">
-            <Camera size={14} color="white" />
-            <Text className="text-white text-xs font-semibold ml-2">Generate Image</Text>
-          </Pressable>
+          {isGenerating ? (
+            <>
+              <ActivityIndicator size="large" color="rgba(255,255,255,0.7)" />
+              <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, marginTop: 10, fontWeight: '600' }}>
+                Generating tank image…
+              </Text>
+            </>
+          ) : (
+            <>
+              <FishIcon size={48} color="rgba(255,255,255,0.3)" />
+              {tank.fishIds.length === 0 && (
+                <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, marginTop: 8 }}>
+                  Add fish to generate an image
+                </Text>
+              )}
+            </>
+          )}
         </LinearGradient>
       )}
 
@@ -320,43 +333,54 @@ export default function MyTankScreen() {
   const [renamingTankId, setRenamingTankId] = useState<string | null>(null);
   const [deletingTankId, setDeletingTankId] = useState<string | null>(null);
   const deletingTank = tanks.find(t => t.id === deletingTankId);
-  const [generatingImageFor, setGeneratingImageFor] = useState<string | null>(null);
+  // Track which tanks are generating (ref = no stale closure, state = for UI updates)
+  const generatingRef = useRef<Set<string>>(new Set());
+  const [generatingSet, setGeneratingSet] = useState<Set<string>>(new Set());
+  // Track which tank+fishCount combos have been queued so we don't double-fire
+  const queuedRef = useRef<Set<string>>(new Set());
 
   const sortedTanks = getSortedTanks();
   const renamingTank = tanks.find(t => t.id === renamingTankId);
 
-  const handleRegenerateImage = useCallback(async (tank: ExtendedTankSetup) => {
-    if (generatingImageFor === tank.id) return;
-    setGeneratingImageFor(tank.id);
+  // Stable image generation — no useCallback stale closure issues
+  const generateImage = async (tank: ExtendedTankSetup) => {
+    if (generatingRef.current.has(tank.id)) return;
+    generatingRef.current.add(tank.id);
+    setGeneratingSet(prev => new Set(prev).add(tank.id));
+
     const fishObjs = tank.fishIds.map(id => getFishById(id)).filter(Boolean);
     const plantObjs = (tank.plantIds ?? []).map(id => getPlantById(id)).filter(Boolean);
     const fishNames = fishObjs.map(f => f!.commonName);
     const plantNames = plantObjs.map(p => p!.commonName);
-    const cleanliness = getTankCleanliness(tank);
-    const isDirty = cleanliness === 'overdue';
+    const isDirty = getTankCleanliness(tank) === 'overdue';
+
     const url = await generateTankImage(fishNames, plantNames, tank.waterType, isDirty);
     if (url) updateTankImage(tank.id, url, isDirty);
-    setGeneratingImageFor(null);
-  }, [generatingImageFor, updateTankImage]);
 
-  // Auto-generate images for tanks that have fish but no image
-  const autoGenerateRef = useRef<Set<string>>(new Set());
+    generatingRef.current.delete(tank.id);
+    setGeneratingSet(prev => { const s = new Set(prev); s.delete(tank.id); return s; });
+  };
 
+  // Auto-generate whenever a tank's fish count changes (covers new tanks + fish added)
+  const fishCountKey = sortedTanks.map(t => `${t.id}:${t.fishIds.length}`).join(',');
   useEffect(() => {
     sortedTanks.forEach(tank => {
       if (tank.fishIds.length === 0) return;
       const key = `${tank.id}:${tank.fishIds.length}`;
-      if (!autoGenerateRef.current.has(key)) {
-        autoGenerateRef.current.add(key);
-        handleRegenerateImage(tank);
+      if (!queuedRef.current.has(key)) {
+        queuedRef.current.add(key);
+        generateImage(tank);
       }
     });
-  }, [sortedTanks.map(t => `${t.id}:${t.fishIds.length}`).join(',')]);
+  }, [fishCountKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleMarkCleaned = useCallback((tank: ExtendedTankSetup) => {
+  const handleMarkCleaned = (tank: ExtendedTankSetup) => {
     confirmCleaned(tank.id);
-    handleRegenerateImage({ ...tank, lastCleanedAt: new Date().toISOString() });
-  }, [confirmCleaned, handleRegenerateImage]);
+    // Force regenerate with clean state by clearing the queued key first
+    const key = `${tank.id}:${tank.fishIds.length}`;
+    queuedRef.current.delete(key);
+    generateImage({ ...tank, lastCleanedAt: new Date().toISOString() });
+  };
 
   return (
     <View className={cn('flex-1', isDark ? 'bg-slate-900' : 'bg-slate-50')}>
@@ -396,29 +420,23 @@ export default function MyTankScreen() {
           ) : (
             <>
               {sortedTanks.map(tank => (
-                <View key={tank.id}>
-                  <TankCard
-                    tank={tank}
-                    isActive={tank.id === activeTankId}
-                    isFavorite={tank.id === favoriteTankId}
-                    isDark={isDark}
-                    onSetActive={() => setActiveTank(tank.id === activeTankId ? null : tank.id)}
-                    onDelete={() => setDeletingTankId(tank.id)}
-                    onAddFish={() => router.push(`/add-to-tank?tankId=${tank.id}&mode=fish`)}
-                    onAddPlants={() => router.push(`/add-to-tank?tankId=${tank.id}&mode=plants`)}
-                    onRename={() => setRenamingTankId(tank.id)}
-                    onToggleFavorite={() => setFavoriteTank(tank.id === favoriteTankId ? null : tank.id)}
-                    onMarkCleaned={() => handleMarkCleaned(tank)}
-                    onRegenerateImage={() => handleRegenerateImage(tank)}
-                    onViewDetails={() => router.push(`/tank/${tank.id}`)}
-                  />
-                  {generatingImageFor === tank.id && (
-                    <View className="items-center -mt-2 mb-4">
-                      <ActivityIndicator size="small" color="#0EA5E9" />
-                      <Text className={cn('text-xs mt-1', isDark ? 'text-slate-400' : 'text-slate-500')}>Generating tank image…</Text>
-                    </View>
-                  )}
-                </View>
+                <TankCard
+                  key={tank.id}
+                  tank={tank}
+                  isActive={tank.id === activeTankId}
+                  isFavorite={tank.id === favoriteTankId}
+                  isGenerating={generatingSet.has(tank.id)}
+                  isDark={isDark}
+                  onSetActive={() => setActiveTank(tank.id === activeTankId ? null : tank.id)}
+                  onDelete={() => setDeletingTankId(tank.id)}
+                  onAddFish={() => router.push(`/add-to-tank?tankId=${tank.id}&mode=fish`)}
+                  onAddPlants={() => router.push(`/add-to-tank?tankId=${tank.id}&mode=plants`)}
+                  onRename={() => setRenamingTankId(tank.id)}
+                  onToggleFavorite={() => setFavoriteTank(tank.id === favoriteTankId ? null : tank.id)}
+                  onMarkCleaned={() => handleMarkCleaned(tank)}
+                  onRegenerateImage={() => generateImage(tank)}
+                  onViewDetails={() => router.push(`/tank/${tank.id}`)}
+                />
               ))}
             </>
           )}
