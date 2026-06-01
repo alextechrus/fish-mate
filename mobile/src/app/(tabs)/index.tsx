@@ -17,9 +17,6 @@ import type { Plant } from '@/lib/data/plant-database';
 import { cn } from '@/lib/cn';
 import { AnimatedTank } from '@/components/AnimatedTank';
 import { newsItems } from '@/lib/data/articles';
-
-const EMPTY_TANK_IMAGE_URL =
-  'https://images.unsplash.com/photo-1584464491033-06628f3a6b7b?w=1024&q=80';
 import { useFishImage, usePlantImage } from '@/lib/hooks/useImageUrl';
 
 const SCREEN_W = Dimensions.get('window').width;
@@ -298,26 +295,26 @@ export default function HomeScreen() {
             </ScrollView>
           )}
 
-          {/* Tank Hero — AI photo if generated, default empty tank image otherwise */}
+          {/* Tank Hero — AI photo if generated, AnimatedTank otherwise */}
           <View className="mb-4">
-            <Pressable onPress={() => router.push('/(tabs)/my-tank')} style={{ marginHorizontal: 20 }}>
-              <View style={{
-                width: SCREEN_W - 40, height: 210, borderRadius: 20,
-                overflow: 'hidden', borderWidth: 1.5,
-                borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
-              }}>
-                <Image
-                  source={{ uri: activeTank?.generatedImageUrl ?? EMPTY_TANK_IMAGE_URL }}
-                  style={{ width: '100%', height: '100%' }}
-                  resizeMode="cover"
-                />
-                <LinearGradient
-                  colors={['transparent', 'rgba(0,0,0,0.7)']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 0, y: 1 }}
-                  style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 90, justifyContent: 'flex-end', padding: 14 }}
-                >
-                  {activeTank ? (
+            {activeTank?.generatedImageUrl ? (
+              <Pressable onPress={() => router.push('/(tabs)/my-tank')} style={{ marginHorizontal: 20 }}>
+                <View style={{
+                  width: SCREEN_W - 40, height: 210, borderRadius: 20,
+                  overflow: 'hidden', borderWidth: 1.5,
+                  borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+                }}>
+                  <Image
+                    source={{ uri: activeTank.generatedImageUrl }}
+                    style={{ width: '100%', height: '100%' }}
+                    resizeMode="cover"
+                  />
+                  <LinearGradient
+                    colors={['transparent', 'rgba(0,0,0,0.7)']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 0, y: 1 }}
+                    style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 90, justifyContent: 'flex-end', padding: 14 }}
+                  >
                     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                       <View>
                         <Text style={{ color: 'white', fontWeight: '800', fontSize: 16 }}>{activeTank.name}</Text>
@@ -325,25 +322,30 @@ export default function HomeScreen() {
                           {activeTank.waterType} · {tankFish.length} fish · {tankPlants.length} plants
                         </Text>
                       </View>
-                      {activeTank && (
-                        <View style={{
-                          backgroundColor: getTankCleanliness(activeTank) === 'overdue' ? '#EF444490' : getTankCleanliness(activeTank) === 'due-soon' ? '#F59E0B90' : '#10B98190',
-                          borderRadius: 10, paddingHorizontal: 8, paddingVertical: 4,
-                        }}>
-                          <Text style={{ color: 'white', fontSize: 11, fontWeight: '700' }}>
-                            {getTankCleanliness(activeTank) === 'clean' ? 'Clean' : getTankCleanliness(activeTank) === 'due-soon' ? 'Due soon' : 'Needs cleaning'}
-                          </Text>
-                        </View>
-                      )}
+                      <View style={{
+                        backgroundColor: getTankCleanliness(activeTank) === 'overdue' ? '#EF444490' : getTankCleanliness(activeTank) === 'due-soon' ? '#F59E0B90' : '#10B98190',
+                        borderRadius: 10, paddingHorizontal: 8, paddingVertical: 4,
+                      }}>
+                        <Text style={{ color: 'white', fontSize: 11, fontWeight: '700' }}>
+                          {getTankCleanliness(activeTank) === 'clean' ? 'Clean' : getTankCleanliness(activeTank) === 'due-soon' ? 'Due soon' : 'Needs cleaning'}
+                        </Text>
+                      </View>
                     </View>
-                  ) : (
-                    <Text style={{ color: 'rgba(255,255,255,0.8)', fontWeight: '700', fontSize: 15 }}>
-                      Tap to set up your tank
-                    </Text>
-                  )}
-                </LinearGradient>
-              </View>
-            </Pressable>
+                  </LinearGradient>
+                </View>
+              </Pressable>
+            ) : (
+              <AnimatedTank
+                fish={tankFish}
+                plants={tankPlants}
+                waterType={activeTank?.waterType ?? 'freshwater'}
+                tankName={activeTank?.name}
+                isEmpty={isEmpty}
+                onPress={() => router.push('/(tabs)/my-tank')}
+                onCreateTank={() => router.push('/(tabs)/my-tank')}
+                isDark={isDark}
+              />
+            )}
           </View>
 
           {/* Compatibility Quick-Access */}

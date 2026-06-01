@@ -20,10 +20,11 @@ import { getPlantById } from '@/lib/data/plant-database';
 import { WaterType, Fish } from '@/lib/types/fish';
 import { cn } from '@/lib/cn';
 import { generateTankImage } from '@/lib/services/image-generation';
-
-// Shared default image for all empty/ungenerated tanks — one URL, zero AI cost
-const EMPTY_TANK_IMAGE_URL =
-  'https://images.unsplash.com/photo-1584464491033-06628f3a6b7b?w=1024&q=80';
+import { AnimatedTank } from '@/components/AnimatedTank';
+import { getFishById } from '@/lib/data/fish-database';
+import { getPlantById } from '@/lib/data/plant-database';
+import type { Plant } from '@/lib/data/plant-database';
+import { Fish } from '@/lib/types/fish';
 
 // ─── Create Tank Modal ───────────────────────────────────────────────────────
 
@@ -127,6 +128,21 @@ const RenameModal = ({
   );
 };
 
+// Derives fish/plant objects and renders the AnimatedTank inside a card
+const TankCardAnimated = ({ tank, isDark }: { tank: ExtendedTankSetup; isDark: boolean }) => {
+  const fish: Fish[] = tank.fishIds.map(id => getFishById(id)).filter((f): f is Fish => !!f);
+  const plants: Plant[] = (tank.plantIds ?? []).map(id => getPlantById(id)).filter((p): p is Plant => !!p);
+  return (
+    <AnimatedTank
+      fish={fish}
+      plants={plants}
+      waterType={tank.waterType}
+      isEmpty={false}
+      isDark={isDark}
+    />
+  );
+};
+
 // ─── Cleanliness constants ────────────────────────────────────────────────────
 
 const CLEAN_COLORS = { clean: '#10B981', 'due-soon': '#F59E0B', overdue: '#EF4444' } as const;
@@ -169,40 +185,56 @@ const TankCard = ({
       style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: isDark ? 0.3 : 0.1, shadowRadius: 8, elevation: 4 }}
     >
       {/* AI image or gradient placeholder */}
-      {/* Tank image — always shown (default or AI-generated) */}
-      <View style={{ position: 'relative' }}>
-        <Image
-          source={{ uri: imageUri ?? EMPTY_TANK_IMAGE_URL }}
-          style={{ width: '100%', height: 180 }}
-          resizeMode="cover"
-        />
+      {/* Tank image section */}
+      <View style={{ position: 'relative', height: 180 }}>
+        {imageUri ? (
+          /* AI-generated photo */
+          <Image source={{ uri: imageUri }} style={{ width: '100%', height: 180 }} resizeMode="cover" />
+        ) : tank.fishIds.length === 0 && (tank.plantIds ?? []).length === 0 ? (
+          /* Genuinely empty tank — gradient placeholder, nothing to generate */
+          <LinearGradient
+            colors={tank.waterType === 'saltwater' ? ['#0A2744', '#0A3D62'] : ['#062033', '#0A3D5C']}
+            style={{ height: 180, alignItems: 'center', justifyContent: 'center' }}
+          >
+            <FishIcon size={40} color="rgba(255,255,255,0.25)" />
+            <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, marginTop: 10, fontWeight: '600' }}>
+              Add fish or plants to get started
+            </Text>
+          </LinearGradient>
+        ) : (
+          /* Has fish/plants but no AI image yet — show animated preview */
+          <TankCardAnimated tank={tank} isDark={isDark} />
+        )}
+
         {/* Generating overlay */}
         {isGenerating && (
           <View style={{
-            position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.55)',
+            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.6)',
             alignItems: 'center', justifyContent: 'center',
           }}>
             <ActivityIndicator size="large" color="white" />
-            <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 13, fontWeight: '600', marginTop: 10 }}>
+            <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: 13, fontWeight: '600', marginTop: 10 }}>
               Generating your tank image…
             </Text>
           </View>
         )}
-        {/* Refresh button — only visible when tank has fish and not currently generating */}
+
+        {/* Refresh / Generate button — only when tank has fish and not currently generating */}
         {tank.fishIds.length > 0 && !isGenerating && (
           <Pressable
             onPress={onRegenerateImage}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             style={{
               position: 'absolute', top: 10, right: 10,
-              backgroundColor: 'rgba(0,0,0,0.5)',
+              backgroundColor: 'rgba(0,0,0,0.55)',
               borderRadius: 20, paddingHorizontal: 10, paddingVertical: 6,
               flexDirection: 'row', alignItems: 'center',
             }}
           >
             <RefreshCw size={13} color="white" />
             <Text style={{ color: 'white', fontSize: 11, fontWeight: '700', marginLeft: 5 }}>
-              {imageUri ? 'Refresh' : 'Generate AI Image'}
+              {imageUri ? 'Refresh Image' : 'Generate AI Image'}
             </Text>
           </Pressable>
         )}
